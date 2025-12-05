@@ -1,0 +1,57 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300 relative overflow-hidden">
+  <%- include('../utils/navbar', { theme: 'light' }) %>
+
+  <!-- Main Content -->
+  <div class="flex items-center justify-center min-h-screen px-8">
+    <div class="w-full max-w-6xl">
+      <div class="flex items-center justify-center gap-16">
+        <!-- POKER Text -->
+        <div class="text-left">
+          <h1 class="text-8xl font-serif italic text-blue-900" style="font-family: 'Georgia', serif;">POKER</h1>
+        </div>
+
+        <!-- Playing Cards SVG -->
+        <div class="relative">
+          <svg width="400" height="300" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+            <!-- Card 4 (Back) -->
+            <g transform="translate(50, 30) rotate(-15)">
+              <rect x="0" y="0" width="120" height="170" rx="10" fill="white" stroke="#1e293b" stroke-width="3"/>
+              <text x="15" y="35" font-size="28" fill="#ef4444" font-weight="bold">A</text>
+              <text x="15" y="60" font-size="32" fill="#ef4444">♦</text>
+            </g>
+            
+            <!-- Card 3 -->
+            <g transform="translate(120, 20) rotate(-5)">
+              <rect x="0" y="0" width="120" height="170" rx="10" fill="white" stroke="#1e293b" stroke-width="3"/>
+              <text x="15" y="35" font-size="28" fill="#1e293b" font-weight="bold">A</text>
+              <text x="15" y="60" font-size="32" fill="#1e293b">♣</text>
+            </g>
+            
+            <!-- Card 2 -->
+            <g transform="translate(190, 15) rotate(5)">
+              <rect x="0" y="0" width="120" height="170" rx="10" fill="white" stroke="#1e293b" stroke-width="3"/>
+              <text x="15" y="35" font-size="28" fill="#ef4444" font-weight="bold">A</text>
+              <text x="15" y="60" font-size="32" fill="#ef4444">♥</text>
+            </g>
+            
+            <!-- Card 1 (Front - Ace of Spades) -->
+            <g transform="translate(260, 10) rotate(15)">
+              <rect x="0" y="0" width="120" height="170" rx="10" fill="white" stroke="#1e293b" stroke-width="3"/>
+              <text x="15" y="35" font-size="28" fill="#1e293b" font-weight="bold">A</text>
+              <text x="15" y="60" font-size="32" fill="#1e293b">♠</text>
+              
+              <!-- Large center spade -->
+              <text x="35" y="130" font-size="80" fill="#1e293b">♠</text>
+              
+              <!-- Bottom corner -->
+              <text x="90" y="160" font-size="28" fill="#1e293b" font-weight="bold" transform="rotate(180 102 145)">A</text>
+              <text x="90" y="140" font-size="32" fill="#1e293b" transform="rotate(180 102 125)">♠</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <%- include('../utils/footer') %>
+    </div>
+  </div>
+</div>

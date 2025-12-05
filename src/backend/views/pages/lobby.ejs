@@ -1,0 +1,175 @@
+<div class="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300">
+  <!-- Header -->
+  <div class="bg-white shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <h1 class="text-3xl font-serif italic text-blue-900" style="font-family: 'Georgia', serif;">POKER</h1>
+        <span class="text-gray-400">|</span>
+        <span class="text-xl text-gray-700">Game Lobby</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <div class="text-right">
+          <p class="text-sm text-gray-500">Logged in as</p>
+          <p class="font-semibold text-gray-700"><%= typeof username !== 'undefined' ? username : 'Player' %></p>
+        </div>
+        <button
+          onclick="location.href='/auth/logout'"
+          class="bg-red-500 hover:bg-red-600 text-white font-semibold px-5 py-2 rounded-full transition-all duration-300"
+        >
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Left Column: Game List -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Create Game Section -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">Create New Game</h2>
+          <form action="/games" method="POST" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label for="gameName" class="block text-sm font-medium text-gray-700 mb-2">
+                  Game Name
+                </label>
+                <input
+                  type="text"
+                  id="gameName"
+                  name="gameName"
+                  required
+                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300"
+                  placeholder="My Poker Game"
+                />
+              </div>
+              <div>
+                <label for="maxPlayers" class="block text-sm font-medium text-gray-700 mb-2">
+                  Max Players
+                </label>
+                <select
+                  id="maxPlayers"
+                  name="maxPlayers"
+                  class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300"
+                >
+                  <option value="2">2 Players</option>
+                  <option value="4">4 Players</option>
+                  <option value="6" selected>6 Players</option>
+                  <option value="8">8 Players</option>
+                  <option value="10">10 Players</option>
+                </select>
+              </div>
+            </div>
+            <button
+              type="submit"
+              class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform hover:scale-105"
+            >
+              Create Game
+            </button>
+          </form>
+        </div>
+
+        <!-- Available Games List -->
+        <div class="bg-white rounded-xl shadow-lg p-6">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">Available Games</h2>
+          
+          <% if (typeof games !== 'undefined' && games.length > 0) { %>
+            <div class="space-y-3">
+              <% games.forEach(function(game) { %>
+                <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all duration-300">
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                      <h3 class="text-lg font-semibold text-gray-800"><%= game.name %></h3>
+                      <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                        <span class="flex items-center gap-1">
+                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+                          </svg>
+                          <%= game.player_count || 0 %>/<%= game.max_players %> Players
+                        </span>
+                        <span class="px-2 py-1 bg-<%= game.state === 'waiting' ? 'green' : 'yellow' %>-100 text-<%= game.state === 'waiting' ? 'green' : 'yellow' %>-700 rounded-full text-xs font-medium">
+                          <%= game.state === 'waiting' ? 'Waiting' : 'In Progress' %>
+                        </span>
+                      </div>
+                    </div>
+                    <% if (game.state === 'waiting') { %>
+                      <button
+                        onclick="location.href='/games/<%= game.id %>'"
+                        class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
+                      >
+                        Join
+                      </button>
+                    <% } else { %>
+                      <button
+                        onclick="location.href='/games/<%= game.id %>'"
+                        class="bg-gray-400 hover:bg-gray-500 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
+                      >
+                        Spectate
+                      </button>
+                    <% } %>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div class="text-center py-12">
+              <svg class="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+              </svg>
+              <p class="text-gray-500 text-lg">No games available</p>
+              <p class="text-gray-400 text-sm mt-1">Create a new game to get started!</p>
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- Right Column: Chat -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-xl shadow-lg p-6 h-[calc(100vh-12rem)] flex flex-col">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">Lobby Chat</h2>
+          
+          <!-- Messages Area -->
+          <div class="flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-4">
+            <% if (typeof messages !== 'undefined' && messages.length > 0) { %>
+              <% messages.forEach(function(msg) { %>
+                <div class="bg-white rounded-lg p-3 shadow-sm">
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="font-semibold text-blue-600 text-sm"><%= msg.username %></span>
+                    <span class="text-xs text-gray-400"><%= new Date(msg.created_at).toLocaleTimeString() %></span>
+                  </div>
+                  <p class="text-gray-700 text-sm"><%= msg.message %></p>
+                </div>
+              <% }); %>
+            <% } else { %>
+              <p class="text-gray-400 text-center text-sm">No messages yet. Start the conversation!</p>
+            <% } %>
+          </div>
+
+          <!-- Message Input -->
+          <form action="/chat/send" method="POST" class="flex gap-2">
+            <input
+              type="text"
+              name="message"
+              placeholder="Type a message..."
+              required
+              class="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-300"
+            />
+            <button
+              type="submit"
+              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg transition-all duration-300"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="fixed bottom-4 right-8">
+    <p class="text-xl font-semibold text-gray-700">Team Z-j</p>
+  </div>
+</div>

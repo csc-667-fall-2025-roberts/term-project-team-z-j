@@ -34,16 +34,16 @@ app.use('/game.ts', (_req, res) => {
 
 // landing page
 app.get('/', (_req, res) => {
-    res.render('index');
+    res.render('pages/index');
 });
 
 // login page (GET)
 app.get('/auth/login', (_req, res) => {
-    res.render('login', { error: null });
+    res.render('pages/login', { error: null });
 });
 
 // login submit (POST) – will hook to DB later
-app.post('/auth/login', (req, res) => {
+app.post('/auth/login', (_req, res) => {
     // TODO: check credentials against users table
     // for now just send them to the lobby so frontend flow works
     res.redirect('/lobby');
@@ -51,11 +51,11 @@ app.post('/auth/login', (req, res) => {
 
 // signup page (GET)
 app.get('/auth/signup', (_req, res) => {
-    res.render('signup', { error: null });
+    res.render('pages/signup', { error: null });
 });
 
 // signup submit (POST) – will hook to DB later
-app.post('/auth/signup', (req, res) => {
+app.post('/auth/signup', (_req, res) => {
     // TODO: insert new user into users table
     // for now just redirect back to login
     res.redirect('/auth/login');
@@ -68,7 +68,7 @@ app.get('/auth/logout', (_req, res) => {
 
 // lobby – later this will read games + messages from DB
 app.get('/lobby', (_req, res) => {
-    res.render('lobby', {
+    res.render('pages/lobby', {
         username: 'Player1', // TODO: pull from session after auth is added
         games: [],           // TODO: fetch game_room records
         messages: []         // TODO: fetch messages for lobby / room
@@ -78,7 +78,7 @@ app.get('/lobby', (_req, res) => {
 // game page – base path per milestone: /games/:id
 app.get('/games/:id', (req, res) => {
     const gameId = req.params.id;
-    res.render('game', { gameId });
+    res.render('pages/game', { gameId });
 });
 
 // optional alias so /game/:id also works if someone links that
@@ -93,7 +93,7 @@ app.get('/game', (_req, res) => {
 });
 
 // create game – stub for now (will insert into game_room later)
-app.post('/games', (req, res) => {
+app.post('/games', (_req, res) => {
     // TODO: insert a new row into game_room using database.ts
     // for demo we just go back to lobby
     res.redirect('/lobby');
@@ -101,12 +101,16 @@ app.post('/games', (req, res) => {
 
 // generic error page route
 app.get('/error', (_req, res) => {
-    res.status(500).render('error', { message: 'An error occurred' });
+    res.status(500).render('pages/error', { message: 'An error occurred' });
 });
 
 // 404 handler – must be last route
 app.use((_req, res) => {
-    res.status(404).render('error', { message: 'Page not found' });
+    res.status(404).render('pages/error', {
+        statusCode: 404,
+        title: 'Page Not Found',
+        message: 'Page not found'
+    });
 });
 
 // ---------- STARTUP ----------
