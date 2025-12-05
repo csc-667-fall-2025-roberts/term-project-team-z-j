@@ -9,6 +9,9 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../../public')));
+
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -18,9 +21,21 @@ app.use('/main.ts', (_req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/main.ts'));
 });
 
+app.use('/game.ts', (_req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/games/game.ts'));
+});
+
 // Routes
 app.get('/', (_req, res) => {
     res.render('index');
+});
+
+app.get('/game', (_req, res) => {
+    res.render('pages/game');
+});
+
+app.get('/error', (_req, res) => {
+    res.render('pages/error');
 });
 
 ViteExpress.listen(app, PORT, () => {

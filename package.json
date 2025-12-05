@@ -2,11 +2,11 @@
   "name": "term-project",
   "version": "1.0.0",
   "type": "module",
-  "main": "dist/backend/server.js",
+  "main": "dist/backend/server.ts",
   "scripts": {
     "dev": "nodemon --exec tsx src/backend/server.ts",
     "build": "tsc",
-    "start": "node dist/backend/server.js",
+    "start": "node dist/backend/server.ts",
     "migrate:up": "NODE_OPTIONS='--import tsx' node-pg-migrate up",
     "migrate:down": "NODE_OPTIONS='--import tsx' node-pg-migrate down"
   },

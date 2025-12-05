@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Room - Texas Hold 'em</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300 relative overflow-hidden">
+      <%- include('../utils/navbar') %>
+
+      <!-- Main Game Container -->
+      <div class="flex flex-col items-center justify-center min-h-screen px-4 py-8">
+        <div class="w-full -mt-12">
+          
+          <%- include('../utils/table') %>
+          
+          <div class="mt-24">
+            <%- include('../utils/actions') %>
+          </div>
+
+          <div class="-mt-16">
+            <%- include('../utils/footer') %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('../utils/game-elements') %>
+    <script type="module" src="/game.ts"></script>
+  </body>
+</html>

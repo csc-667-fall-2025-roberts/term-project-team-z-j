@@ -1,0 +1,253 @@
+<!-- Action Controls Component -->
+<div class="w-full max-w-6xl mx-auto mt-19">
+  <div class="flex items-center justify-between gap-8 px-4">
+    
+    <!-- Left Side: Chat Button -->
+    <div class="flex-shrink-0">
+      <button id="chatToggle" class="flex items-center gap-2 text-gray-700 hover:text-gray-900 font-bold text-xl uppercase transition-all cursor-pointer tracking-wide" style="text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">
+        💬 <span>CHAT</span>
+      </button>
+    </div>
+
+    <!-- Right Side: Action Buttons -->
+    <div class="flex items-center gap-6">
+      
+      <!-- Fold Button -->
+      <button id="foldBtn" class="text-red-500 hover:text-red-600 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
+        FOLD
+      </button>
+
+      <!-- Check Button -->
+      <button id="checkBtn" class="text-green-600 hover:text-green-700 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
+        CHECK
+      </button>
+
+      <!-- Raise Section -->
+      <div class="flex items-center gap-4">
+        
+        <!-- Bet Amount -->
+        <div class="text-gray-900 font-extrabold text-2xl tracking-wide" style="text-shadow: 1px 1px 2px rgba(255,255,255,0.7);">
+          $<span id="betAmount">50</span>
+        </div>
+
+        <!-- Slider -->
+        <input 
+          type="range" 
+          id="betSlider" 
+          min="10" 
+          max="1000" 
+          value="50" 
+          step="10"
+          class="w-56 h-2.5 rounded-lg appearance-none cursor-pointer"
+          style="background: linear-gradient(to right, #60a5fa 0%, #3b82f6 100%);"
+        />
+
+        <!-- Raise Button -->
+        <button id="raiseBtn" class="text-orange-500 hover:text-orange-600 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
+          RAISE
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<!-- Chat Panel (Draggable) -->
+<div id="chatPanel" class="hidden fixed left-4 bottom-24 w-96 bg-white rounded-xl shadow-2xl border border-gray-300 overflow-hidden" style="z-index: 1000;">
+  <div id="chatHeader" class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 flex justify-between items-center cursor-move">
+    <h3 class="font-semibold text-white text-lg select-none">💬 Game Chat</h3>
+    <button id="closeChatBtn" class="text-white hover:bg-white hover:bg-opacity-20 px-2 py-1 rounded transition">✕</button>
+  </div>
+
+  <div id="chatMessages" class="h-80 overflow-y-auto p-4 space-y-3 bg-gray-50">
+    <!-- Sample message with dicebear avatar -->
+    <div class="flex gap-3 items-start">
+      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player2" alt="varan307" class="flex-shrink-0 w-10 h-10 rounded-full border-2 border-gray-300 shadow-md" />
+      <div class="flex-1">
+        <div class="flex items-baseline gap-2 mb-1">
+          <span class="font-semibold text-gray-900 text-sm">varan307</span>
+          <span class="text-xs text-gray-500">12:34 PM</span>
+        </div>
+        <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-200">
+          <p class="text-gray-700 text-sm">Good luck everyone!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-4 border-t bg-white">
+    <div class="flex gap-2">
+      <input 
+        type="text" 
+        id="chatInput" 
+        placeholder="Type a message..." 
+        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+      />
+      <button id="sendChatBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
+        Send
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom slider styling */
+  #betSlider::-webkit-slider-thumb {
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    border: 2px solid white;
+    transition: transform 0.2s;
+  }
+  
+  #betSlider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  
+  #betSlider::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    border: 2px solid white;
+    transition: transform 0.2s;
+  }
+  
+  #betSlider::-moz-range-thumb:hover {
+    transform: scale(1.15);
+  }
+</style>
+
+<script>
+  const slider = document.getElementById('betSlider');
+  const betAmountDisplay = document.getElementById('betAmount');
+  
+  if (slider && betAmountDisplay) {
+    slider.addEventListener('input', (e) => {
+      betAmountDisplay.textContent = e.target.value;
+    });
+  }
+
+  const chatToggle = document.getElementById('chatToggle');
+  const chatPanel = document.getElementById('chatPanel');
+  const closeChatBtn = document.getElementById('closeChatBtn');
+  
+  if (chatToggle && chatPanel) {
+    chatToggle.addEventListener('click', () => {
+      chatPanel.classList.toggle('hidden');
+    });
+  }
+  
+  if (closeChatBtn && chatPanel) {
+    closeChatBtn.addEventListener('click', () => {
+      chatPanel.classList.add('hidden');
+    });
+  }
+
+  // Make chat panel draggable
+  const chatHeader = document.getElementById('chatHeader');
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+  let xOffset = 0;
+  let yOffset = 0;
+
+  if (chatHeader && chatPanel) {
+    chatHeader.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', dragEnd);
+  }
+
+  function dragStart(e) {
+    if (e.target === closeChatBtn || e.target.closest('#closeChatBtn')) return;
+    
+    initialX = e.clientX - xOffset;
+    initialY = e.clientY - yOffset;
+
+    if (e.target === chatHeader || chatHeader.contains(e.target)) {
+      isDragging = true;
+    }
+  }
+
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
+      
+      currentX = e.clientX - initialX;
+      currentY = e.clientY - initialY;
+
+      xOffset = currentX;
+      yOffset = currentY;
+
+      setTranslate(currentX, currentY, chatPanel);
+    }
+  }
+
+  function dragEnd(e) {
+    initialX = currentX;
+    initialY = currentY;
+    isDragging = false;
+  }
+
+  function setTranslate(xPos, yPos, el) {
+    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
+  }
+
+  const sendChatBtn = document.getElementById('sendChatBtn');
+  const chatInput = document.getElementById('chatInput');
+  const chatMessages = document.getElementById('chatMessages');
+  
+  // Get current time
+  function getCurrentTime() {
+    const now = new Date();
+    return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  
+  function sendMessage() {
+    if (chatInput && chatMessages && chatInput.value.trim()) {
+      const userName = 'You';
+      const messageText = chatInput.value;
+      const time = getCurrentTime();
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'flex gap-3 items-start';
+      messageDiv.innerHTML = `
+        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player1" alt="${userName}" class="flex-shrink-0 w-10 h-10 rounded-full border-2 border-blue-300 shadow-md" />
+        <div class="flex-1">
+          <div class="flex items-baseline gap-2 mb-1">
+            <span class="font-semibold text-gray-900 text-sm">${userName}</span>
+            <span class="text-xs text-gray-500">${time}</span>
+          </div>
+          <div class="bg-blue-100 p-3 rounded-lg rounded-tl-none shadow-sm border border-blue-200">
+            <p class="text-gray-700 text-sm">${messageText}</p>
+          </div>
+        </div>
+      `;
+      
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      chatInput.value = '';
+    }
+  }
+  
+  if (sendChatBtn) {
+    sendChatBtn.addEventListener('click', sendMessage);
+  }
+  
+  if (chatInput) {
+    chatInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  }
+</script>

@@ -1,0 +1,219 @@
+<script>
+/**
+ * Reusable function to add game elements (cards, icons, chips) to the page
+ * @param {Object} options - Configuration object
+ * @param {string} options.type - Type of element: 'card', 'icon', 'chips'
+ * @param {string} options.containerId - ID of the container element
+ * @param {Object} options.data - Data for the element
+ * @param {Object} options.position - Position object {x, y} or CSS classes
+ * @param {Function} options.onClick - Optional click handler
+ * @returns {HTMLElement} The created element
+ */
+function addGameElement(options) {
+  const { type, containerId, data, position = {}, onClick } = options;
+  const container = document.getElementById(containerId);
+  
+  if (!container) {
+    console.error(`Container with id "${containerId}" not found`);
+    return null;
+  }
+
+  let element;
+
+  switch (type) {
+    case 'card':
+      element = createCard(data);
+      break;
+    case 'icon':
+      element = createIcon(data);
+      break;
+    case 'chips':
+      element = createChips(data);
+      break;
+    default:
+      console.error(`Unknown element type: ${type}`);
+      return null;
+  }
+
+  // Apply positioning
+  if (position.x !== undefined && position.y !== undefined) {
+    element.style.position = 'absolute';
+    element.style.left = `${position.x}px`;
+    element.style.top = `${position.y}px`;
+  }
+  
+  if (position.classes) {
+    element.className += ` ${position.classes}`;
+  }
+
+  // Add click handler if provided
+  if (onClick && typeof onClick === 'function') {
+    element.style.cursor = 'pointer';
+    element.addEventListener('click', onClick);
+  }
+
+  container.appendChild(element);
+  return element;
+}
+
+/**
+ * Create a card element
+ * @param {Object} data - Card data
+ * @param {string} data.rank - Card rank (2-10, J, Q, K, A)
+ * @param {string} data.suit - Card suit (clubs, diamonds, hearts, spades)
+ * @param {boolean} data.faceDown - Whether card is face down
+ * @param {string} data.size - Size: 'small', 'medium', 'large'
+ */
+function createCard(data) {
+  const { rank, suit, faceDown = false, size = 'medium' } = data;
+  
+  const sizeClasses = {
+    small: 'w-16 h-24',
+    medium: 'w-20 h-28',
+    large: 'w-24 h-32'
+  };
+
+  const card = document.createElement('div');
+  card.className = `${sizeClasses[size]} rounded-lg shadow-lg transition-transform hover:scale-105`;
+  
+  if (faceDown) {
+    card.className += ' bg-gradient-to-br from-blue-600 to-blue-800 border-2 border-blue-900';
+    card.innerHTML = `
+      <div class="w-full h-full flex items-center justify-center">
+        <div class="text-white text-4xl opacity-30">🂠</div>
+      </div>
+    `;
+  } else {
+    const cardName = rank === 'A' ? 'ace' : 
+                     rank === 'K' ? 'king' : 
+                     rank === 'Q' ? 'queen' : 
+                     rank === 'J' ? 'jack' : rank;
+    const imagePath = `/cards/${cardName}_of_${suit}.svg`;
+    
+    card.innerHTML = `
+      <img src="${imagePath}" alt="${rank} of ${suit}" class="w-full h-full object-contain" />
+    `;
+  }
+  
+  card.dataset.rank = rank;
+  card.dataset.suit = suit;
+  
+  return card;
+}
+
+/**
+ * Create an icon element
+ * @param {Object} data - Icon data
+ * @param {string} data.icon - Icon emoji or text
+ * @param {string} data.label - Optional label text
+ * @param {string} data.color - Color class (e.g., 'text-yellow-500')
+ * @param {string} data.size - Size: 'small', 'medium', 'large'
+ */
+function createIcon(data) {
+  const { icon, label, color = 'text-gray-700', size = 'medium' } = data;
+  
+  const sizeClasses = {
+    small: 'text-2xl',
+    medium: 'text-4xl',
+    large: 'text-6xl'
+  };
+
+  const iconElement = document.createElement('div');
+  iconElement.className = `flex flex-col items-center gap-1`;
+  
+  iconElement.innerHTML = `
+    <div class="${sizeClasses[size]} ${color}">${icon}</div>
+    ${label ? `<div class="text-xs font-semibold ${color}">${label}</div>` : ''}
+  `;
+  
+  return iconElement;
+}
+
+/**
+ * Create a chips element
+ * @param {Object} data - Chips data
+ * @param {number} data.amount - Chip amount
+ * @param {string} data.color - Chip color: 'red', 'blue', 'green', 'black', 'white'
+ * @param {boolean} data.showAmount - Whether to show amount text
+ * @param {string} data.size - Size: 'small', 'medium', 'large'
+ */
+function createChips(data) {
+  const { amount, color = 'red', showAmount = true, size = 'medium' } = data;
+  
+  const colorClasses = {
+    red: 'bg-gradient-to-br from-red-500 to-red-700 border-red-800',
+    blue: 'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-800',
+    green: 'bg-gradient-to-br from-green-500 to-green-700 border-green-800',
+    black: 'bg-gradient-to-br from-gray-800 to-gray-900 border-black',
+    white: 'bg-gradient-to-br from-gray-100 to-gray-300 border-gray-400',
+    yellow: 'bg-gradient-to-br from-yellow-400 to-yellow-600 border-yellow-700'
+  };
+
+  const sizeClasses = {
+    small: { container: 'w-12 h-12', text: 'text-xs' },
+    medium: { container: 'w-16 h-16', text: 'text-sm' },
+    large: { container: 'w-20 h-20', text: 'text-base' }
+  };
+
+  const chips = document.createElement('div');
+  chips.className = 'flex flex-col items-center gap-1';
+  
+  const chipStack = document.createElement('div');
+  chipStack.className = `${sizeClasses[size].container} rounded-full ${colorClasses[color]} border-4 shadow-lg flex items-center justify-center font-bold text-white relative`;
+  
+  // Add chip pattern
+  chipStack.innerHTML = `
+    <div class="absolute inset-0 rounded-full border-4 border-white opacity-20"></div>
+    <div class="absolute inset-2 rounded-full border-2 border-white opacity-30"></div>
+    ${showAmount ? `<span class="${sizeClasses[size].text} z-10">$${amount}</span>` : ''}
+  `;
+  
+  chips.appendChild(chipStack);
+  
+  if (showAmount) {
+    const amountLabel = document.createElement('div');
+    amountLabel.className = `text-xs font-bold text-white bg-black bg-opacity-50 px-2 py-1 rounded`;
+    amountLabel.textContent = `$${amount}`;
+    chips.appendChild(amountLabel);
+  }
+  
+  chips.dataset.amount = amount;
+  
+  return chips;
+}
+
+/**
+ * Helper function to add multiple elements at once
+ * @param {Array} elementsArray - Array of element configuration objects
+ */
+function addMultipleGameElements(elementsArray) {
+  return elementsArray.map(config => addGameElement(config));
+}
+
+/**
+ * Remove an element with animation
+ * @param {HTMLElement} element - Element to remove
+ * @param {string} animation - Animation type: 'fade', 'slide', 'scale'
+ */
+function removeGameElement(element, animation = 'fade') {
+  if (!element) return;
+  
+  const animations = {
+    fade: 'opacity-0',
+    slide: 'translate-y-10 opacity-0',
+    scale: 'scale-0 opacity-0'
+  };
+  
+  element.style.transition = 'all 0.3s ease-out';
+  element.className += ` ${animations[animation]}`;
+  
+  setTimeout(() => {
+    element.remove();
+  }, 300);
+}
+
+// Make functions globally available
+window.addGameElement = addGameElement;
+window.addMultipleGameElements = addMultipleGameElements;
+window.removeGameElement = removeGameElement;
+</script>
