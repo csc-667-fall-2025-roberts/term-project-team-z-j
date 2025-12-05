@@ -1,8 +1,9 @@
+
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import ViteExpress from 'vite-express';
-// import { l } from 'vite/dist/node/types.d-aGj9QkWt';
+import { testConnection } from './database';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,81 +14,101 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Set EJS as the view engine
+// set EJS as the view engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Serve TypeScript files directly
+// serve the main frontend entry (TypeScript) through Vite
 app.use('/main.ts', (_req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/main.ts'));
+  res.sendFile(path.join(__dirname, '../frontend/main.ts'));
 });
 
-// Routes
+// ---------- ROUTES ----------
+
+// landing page
 app.get('/', (_req, res) => {
-    res.render('index');
+  res.render('index');
 });
 
-// Login route
+// login page (GET)
 app.get('/auth/login', (_req, res) => {
-    res.render('login', { error: null });
+  res.render('login', { error: null });
 });
 
+// login submit (POST) – will hook to DB later
 app.post('/auth/login', (req, res) => {
-    // for now just redirect back to lobby
-    res.redirect('/lobby');
+  // TODO: check credentials against users table
+  // for now just send them to the lobby so frontend flow works
+  res.redirect('/lobby');
 });
 
-// Singup route
+// signup page (GET)
 app.get('/auth/signup', (_req, res) => {
-    res.render('signup', { error: null });
+  res.render('signup', { error: null });
 });
 
+// signup submit (POST) – will hook to DB later
 app.post('/auth/signup', (req, res) => {
-    // for now just redirect back to login
-    res.redirect('/auth/login');
+  // TODO: insert new user into users table
+  // for now just redirect back to login
+  res.redirect('/auth/login');
 });
 
-// Logout
+// logout (just sends them back home for now)
 app.get('/auth/logout', (_req, res) => {
-    // for now just redirect back to /
-    res.redirect('/');
+  res.redirect('/');
 });
 
-// Lobby route
+// lobby – later this will read games + messages from DB
 app.get('/lobby', (_req, res) => {
-    // fetch games and messages from db later
-    res.render('lobby', {
-        username: 'Player1', // get from session
-        games: [],           // fetch from db later
-        messages: []         // fetch from db later
-    });
+  res.render('lobby', {
+    username: 'Player1', // TODO: pull from session after auth is added
+    games: [],           // TODO: fetch game_room records
+    messages: []         // TODO: fetch messages for lobby / room
+  });
 });
 
-// game routes 
-// app.get('/game/:id', (_req, res) => {
-//     res.render('game', { gameId: _req.params.id });
-// });
+// game page – base path per milestone: /games/:id
+app.get('/games/:id', (req, res) => {
+  const gameId = req.params.id;
+  res.render('game', { gameId });
+});
 
-// app.post('/game/create', (req, res) => {
-//     // create new game logic here
-//     res.redirect('/lobby');
-// });
+// optional alias so /game/:id also works if someone links that
+app.get('/game/:id', (req, res) => {
+  const gameId = req.params.id;
+  res.redirect(`/games/${gameId}`);
+});
 
-// error handlers
+// create game – stub for now (will insert into game_room later)
+app.post('/games', (req, res) => {
+  // TODO: insert a new row into game_room using database.ts
+  // for demo we just go back to lobby
+  res.redirect('/lobby');
+});
 
-// app.get('/error', (_req, res) => {
-//     res.render('error', { message: 'An error occurred' });
-// });
+// generic error page route
+app.get('/error', (_req, res) => {
+  res.status(500).render('error', { message: 'An error occurred' });
+});
 
-// 404
-//general 
+// 404 handler – must be last route
+app.use((_req, res) => {
+  res.status(404).render('error', { message: 'Page not found' });
+});
 
+// ---------- STARTUP ----------
 
-// Start the server 
+// test DB connection once on startup so we know config is correct
+testConnection()
+  .then(() => {
+    console.log('[db] PostgreSQL connection OK');
+  })
+  .catch((err) => {
+    console.error('[db] PostgreSQL connection FAILED', err);
+  });
+
+// start the server with ViteExpress so frontend + backend run together
 ViteExpress.listen(app, PORT, () => {
-    console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`Server is running at http://localhost:${PORT}`);
 });
-
-
-
-
