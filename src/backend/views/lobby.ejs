@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Lobby - Texas Hold 'em</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
     <div class="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300">
@@ -186,5 +187,6 @@
     <script type="module">
       import '/main.ts';
     </script>
+    <script type="module" src="/chat.ts"></script>
   </body>
 </html>

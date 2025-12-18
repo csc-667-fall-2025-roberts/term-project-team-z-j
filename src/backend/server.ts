@@ -1,15 +1,20 @@
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import ViteExpress from 'vite-express';
 import { testConnection } from './database';
+import { sendMessage, getMessages } from './controllers/messageController';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const httpServer = createServer(app);
+const io = new Server(httpServer);
+app.set('io', io);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,6 +26,24 @@ app.set('views', path.join(__dirname, 'views'));
 // serve the main frontend entry (TypeScript) through Vite
 app.use('/main.ts', (_req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/main.ts'));
+});
+
+// ---------- MESSAGE ROUTES ----------
+app.post('/api/rooms/:roomId/messages', sendMessage);
+app.get('/api/rooms/:roomId/messages', getMessages);
+
+// ---------- SOCKET.IO ----------
+io.on('connection', (socket) => {
+  console.log('User connected');
+
+  socket.on('room:join', (data: any) => {
+    socket.join(`room:${data.roomId}`); 
+    console.log(`User joined room ${data.roomId}`);;
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
 });
 
 // ---------- ROUTES ----------
@@ -98,7 +121,6 @@ app.use((_req, res) => {
 });
 
 // ---------- STARTUP ----------
-
 // test DB connection once on startup so we know config is correct
 testConnection()
   .then(() => {
@@ -108,7 +130,10 @@ testConnection()
     console.error('[db] PostgreSQL connection FAILED', err);
   });
 
-// start the server with ViteExpress so frontend + backend run together
-ViteExpress.listen(app, PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
+// Start HTTP server first
+httpServer.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
+
+// Then bind ViteExpress to the Express app (not httpServer)
+ViteExpress.bind(app, httpServer);

@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (signInBtn) {
         signInBtn.addEventListener('click', () => {
-            alert('🎮 Sign In / Sign Up coming soon!');
+            alert('Sign In / Sign Up coming soon!');
         });
     }
 });
