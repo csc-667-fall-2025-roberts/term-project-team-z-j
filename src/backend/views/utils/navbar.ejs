@@ -4,16 +4,27 @@
   const btnClass = isDark 
     ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-md hover:shadow-[0_0_20px_rgba(255,255,255,0.2)]' 
     : 'bg-gray-600 hover:bg-gray-700 text-white';
+  const isLoggedIn = typeof user !== 'undefined' && user;
 %>
 
 <!-- Navbar -->
-<div class="absolute top-8 left-12 z-20">
-  <h2 class="text-4xl font-normal <%= textClass %> tracking-tight">Texas Hold 'em</h2>
-</div>
-
-<!-- Sign In / Sign Up Button -->
-<div class="absolute top-8 right-8 z-20">
-  <button onclick="location.href='/auth/signup'" class="<%= btnClass %> font-semibold px-6 py-3 rounded-full transition-all duration-300">
-    Sign In / Sign Up
-  </button>
-</div>
+<nav class="w-full px-8 py-6">
+  <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <h2 class="text-4xl font-normal <%= textClass %> tracking-tight">Texas Hold 'em</h2>
+    
+    <% if (isLoggedIn) { %>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-lg">
+            <%= user.username ? user.username.charAt(0).toUpperCase() : 'U' %>
+          </div>
+          <span class="<%= textClass %> font-semibold"><%= user.username %></span>
+        </div>
+      </div>
+    <% } else { %>
+      <button onclick="location.href='/auth/signup'" class="<%= btnClass %> font-semibold px-6 py-3 rounded-full transition-all duration-300">
+        Sign In / Sign Up
+      </button>
+    <% } %>
+  </div>
+</nav>

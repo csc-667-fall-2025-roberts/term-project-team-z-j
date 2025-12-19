@@ -1,9 +1,9 @@
-
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import ViteExpress from 'vite-express';
-import { testConnection } from './database';
+import { query, testConnection } from './database.js';
+import { gameManager } from './game/GameManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,10 +42,9 @@ app.get('/auth/login', (_req, res) => {
     res.render('pages/login', { error: null });
 });
 
-// login submit (POST) – will hook to DB later
+// login submit (POST) – still stubbed; frontend flow only
 app.post('/auth/login', (_req, res) => {
-    // TODO: check credentials against users table
-    // for now just send them to the lobby so frontend flow works
+    // TODO: later check credentials against users table
     res.redirect('/lobby');
 });
 
@@ -54,10 +53,9 @@ app.get('/auth/signup', (_req, res) => {
     res.render('pages/signup', { error: null });
 });
 
-// signup submit (POST) – will hook to DB later
+// signup submit (POST) – still stubbed; frontend flow only
 app.post('/auth/signup', (_req, res) => {
-    // TODO: insert new user into users table
-    // for now just redirect back to login
+    // TODO: later insert new user into users table
     res.redirect('/auth/login');
 });
 
@@ -66,19 +64,66 @@ app.get('/auth/logout', (_req, res) => {
     res.redirect('/');
 });
 
-// lobby – later this will read games + messages from DB
-app.get('/lobby', (_req, res) => {
-    res.render('pages/lobby', {
-        username: 'Player1', // TODO: pull from session after auth is added
-        games: [],           // TODO: fetch game_room records
-        messages: []         // TODO: fetch messages for lobby / room
-    });
+// lobby – NOW reads games from DB
+app.get('/lobby', async (_req, res) => {
+    try {
+        const result = await query<{
+            id: number;
+            name: string;
+            max_players: number;
+            state: string;
+            player_count: number;
+        }>(`
+      SELECT
+        id,
+        name,
+        max_players,
+        status AS state,
+        0::int AS player_count   -- placeholder until we track real counts
+      FROM game_room
+      ORDER BY created_at DESC
+    `);
+
+        res.render('pages/lobby', {
+            username: 'Player1',      // TODO: pull from session after auth is added
+            games: result.rows,       // <%- games %> in lobby.ejs
+            messages: []              // still empty for now
+        });
+    } catch (err) {
+        console.error('[lobby] Failed to load games', err);
+        res.status(500).render('pages/error', { message: 'Failed to load games' });
+    }
 });
 
 // game page – base path per milestone: /games/:id
-app.get('/games/:id', (req, res) => {
-    const gameId = req.params.id;
-    res.render('pages/game', { gameId });
+app.get('/games/:id', async (req, res) => {
+    const gameId = parseInt(req.params.id);
+
+    try {
+        // Get game room info
+        const roomResult = await query<{
+            id: number;
+            name: string;
+            max_players: number;
+            status: string;
+        }>('SELECT id, name, max_players, status FROM game_room WHERE id = $1', [gameId]);
+
+        if (roomResult.rows.length === 0) {
+            return res.status(404).render('pages/error', { message: 'Game not found' });
+        }
+
+        const room = roomResult.rows[0];
+        const gameState = gameManager.getGameState(gameId);
+
+        res.render('pages/game', {
+            gameId,
+            roomName: room.name,
+            gameState: gameState ? JSON.stringify(gameState) : null
+        });
+    } catch (err) {
+        console.error('[games/:id] Failed to load game', err);
+        res.status(500).render('pages/error', { message: 'Failed to load game' });
+    }
 });
 
 // optional alias so /game/:id also works if someone links that
@@ -92,11 +137,124 @@ app.get('/game', (_req, res) => {
     res.render('pages/game');
 });
 
-// create game – stub for now (will insert into game_room later)
-app.post('/games', (_req, res) => {
-    // TODO: insert a new row into game_room using database.ts
-    // for demo we just go back to lobby
+// create game – NOW inserts into game_room
+app.post('/games', async (req, res) => {
+    const { gameName, maxPlayers } = req.body;
+
+    if (!gameName) {
+        return res.status(400).render('pages/error', {
+            message: 'Game name is required.'
+        });
+    }
+
+    const maxPlayersInt = parseInt(maxPlayers || '6', 10);
+
+    try {
+        // Ensure a dummy owner user exists (id = 1) to satisfy FK on owner_id
+        await query(
+            `
+      INSERT INTO users (id, email, username, password_hash)
+      VALUES (1, 'demo@example.com', 'demo_owner', 'demo')
+      ON CONFLICT (id) DO NOTHING
+    `
+        );
+
+        // Insert the new game-room row
+        await query(
+            `
+      INSERT INTO game_room (owner_id, name, max_players, status)
+      VALUES (1, $1, $2, 'waiting')
+    `,
+            [gameName, maxPlayersInt]
+        );
+
+        res.redirect('/lobby');
+    } catch (err) {
+        console.error('[games] Failed to create game', err);
+        res.status(500).render('pages/error', {
+            message: 'Failed to create game. Please try again.'
+        });
+    }
+});
+
+// very simple chat stub so the form doesn’t 404
+app.post('/chat/send', (_req, res) => {
+    // TODO: later insert into messages table
     res.redirect('/lobby');
+});
+
+// Game API endpoints
+app.post('/api/games/:id/join', async (req, res) => {
+    const gameId = parseInt(req.params.id);
+    const { playerName } = req.body;
+
+    if (!playerName) {
+        return res.status(400).json({ error: 'Player name is required' });
+    }
+
+    const success = await gameManager.joinGame(gameId, playerName);
+    if (success) {
+        res.json({ success: true });
+    } else {
+        res.status(400).json({ error: 'Could not join game' });
+    }
+});
+
+app.post('/api/games/:id/action', async (req, res) => {
+    const gameId = parseInt(req.params.id);
+    const { playerId, action, amount } = req.body;
+
+    if (!playerId || !action) {
+        return res.status(400).json({ error: 'Player ID and action are required' });
+    }
+
+    const success = await gameManager.makeAction(gameId, playerId, action, amount);
+    if (success) {
+        const gameState = gameManager.getGameState(gameId);
+        res.json({ success: true, gameState });
+    } else {
+        res.status(400).json({ error: 'Invalid action' });
+    }
+});
+
+app.get('/api/games/:id/state', (req, res) => {
+    const gameId = parseInt(req.params.id);
+    const gameState = gameManager.getGameState(gameId);
+
+    if (gameState) {
+        res.json(gameState);
+    } else {
+        res.status(404).json({ error: 'Game not found' });
+    }
+});
+
+app.post('/api/games/:id/start', async (req, res) => {
+    const gameId = parseInt(req.params.id);
+    const { playerNames } = req.body;
+
+    if (!playerNames || !Array.isArray(playerNames) || playerNames.length < 2) {
+        return res.status(400).json({ error: 'At least 2 players required' });
+    }
+
+    const success = await gameManager.createGame(gameId, playerNames);
+    if (success) {
+        const gameState = gameManager.getGameState(gameId);
+        res.json({ success: true, gameState });
+    } else {
+        res.status(400).json({ error: 'Could not start game' });
+    }
+});
+
+app.post('/api/games/:id/new-hand', async (req, res) => {
+    const gameId = parseInt(req.params.id);
+
+    const success = await gameManager.startNewHand(gameId);
+    if (success) {
+        const gameState = gameManager.getGameState(gameId);
+        res.json({ success: true, gameState });
+    } else {
+        res.status(400).json({ error: 'Could not start new hand' });
+    }
 });
 
 // generic error page route
