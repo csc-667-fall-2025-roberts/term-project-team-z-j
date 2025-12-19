@@ -1,7 +1,6 @@
 {
   "name": "term-project",
   "version": "1.0.0",
-  "type": "module",
   "main": "dist/backend/server.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/backend/server.ts",
@@ -12,9 +11,11 @@
   },
   "dependencies": {
     "@types/socket.io": "^3.0.1",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "node-pg-migrate": "^8.0.3",
     "pg": "^8.16.3",
     "socket.io": "^4.8.1",
