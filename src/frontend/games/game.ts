@@ -1,15 +1,21 @@
+import { io } from 'socket.io-client';
+
 // Game state
 interface GameState {
     pot: number;
     currentBet: number;
     playerChips: number;
+    gameId: string | null;
 }
 
 const gameState: GameState = {
     pot: 10,
     currentBet: 0,
-    playerChips: 998
+    playerChips: 998,
+    gameId: null
 };
+
+const socket = io();
 
 // Card rendering using actual SVG files from public/cards
 function createCard(rank: string, suit: string, faceDown: boolean = false): string {
@@ -46,8 +52,39 @@ function createCard(rank: string, suit: string, faceDown: boolean = false): stri
   `;
 }
 
+// Load game details
+async function loadGameDetails(gameId: string) {
+    try {
+        const response = await fetch(`/api/games/${gameId}`);
+        const data = await response.json();
+
+        if (data.room) {
+            console.log('Game room:', data.room);
+            console.log('Players:', data.players);
+            // Update UI with game details
+        }
+    } catch (error) {
+        console.error('Failed to load game details:', error);
+    }
+}
+
+// Join game room via socket
+function joinGameRoom(gameId: string) {
+    socket.emit('room:join', { roomId: gameId });
+}
+
 // Initialize game
 document.addEventListener('DOMContentLoaded', () => {
+    // Get game ID from URL
+    const pathParts = window.location.pathname.split('/');
+    const gameId = pathParts[pathParts.length - 1];
+
+    if (gameId) {
+        gameState.gameId = gameId;
+        loadGameDetails(gameId);
+        joinGameRoom(gameId);
+    }
+
     // Action buttons
     const foldBtn = document.getElementById('foldBtn');
     const checkBtn = document.getElementById('checkBtn');
@@ -82,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.playerChips -= amount;
         updatePot();
         console.log(`Player raised ${amount}`);
-        alert(`You raised $${amount}!`);
+        alert(`You raised ${amount}!`);
     });
 
     // Update pot display
@@ -92,4 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
             potElement.textContent = gameState.pot.toString();
         }
     }
+
+    // Socket event listeners
+    socket.on('room:player:joined', (data) => {
+        console.log('Player joined:', data);
+        // Update UI to show new player
+    });
+
+    socket.on('room:message:new', (data) => {
+        console.log('New message:', data);
+        // Update chat UI
+    });
 });

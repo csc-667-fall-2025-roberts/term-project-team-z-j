@@ -8,20 +8,42 @@
   </head>
   <body>
     <div class="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300 relative overflow-hidden">
-      <%- include('../utils/navbar') %>
+      <!-- Header -->
+      <div class="bg-white shadow-md relative z-30">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <a href="/lobby" class="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+              <span class="text-sm font-medium">Back to Lobby</span>
+            </a>
+            <span class="text-gray-400">|</span>
+            <h1 class="text-3xl font-serif italic text-blue-900" style="font-family: 'Georgia', serif;">Texas Hold 'em</h1>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="text-right">
+              <p class="text-sm text-gray-500">Logged in as</p>
+              <p class="font-semibold text-gray-700"><%= typeof username !== 'undefined' ? username : 'Player' %></p>
+            </div>
+            <button
+              onclick="location.href='/auth/logout'"
+              class="bg-red-500 hover:bg-red-600 text-white font-semibold px-5 py-2 rounded-full transition-all duration-300"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Main Game Container -->
-      <div class="flex flex-col items-center justify-center min-h-screen px-4 py-8">
-        <div class="w-full -mt-12">
+      <div class="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8">
+        <div class="w-full">
           
           <%- include('../utils/table') %>
           
           <div class="mt-24">
             <%- include('../utils/actions') %>
-          </div>
-
-          <div class="-mt-16">
-            <%- include('../utils/footer') %>
           </div>
         </div>
       </div>
@@ -31,11 +53,3 @@
     <script type="module" src="/game.ts"></script>
   </body>
 </html>
-<div class="absolute top-4 left-4">
-  <a
-    href="/lobby"
-    class="px-4 py-2 rounded-lg bg-slate-800/80 text-slate-50 border border-slate-600 hover:bg-slate-700 text-sm"
-  >
-    ← Back to Lobby
-  </a>
-</div>

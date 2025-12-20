@@ -1,98 +1,103 @@
 <!-- Poker Table Component -->
-<div class="relative w-full max-w-6xl mx-auto">
+<div class="relative w-full max-w-4xl mx-auto">
   <!-- Poker Table - Wooden Rim -->
-  <div class="relative bg-gradient-to-b from-amber-800 via-amber-900 to-amber-950 shadow-2xl" style="border-radius: 250px; padding: 24px; width: 100%; height: 480px; box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6), inset 0 2px 8px rgba(255, 200, 100, 0.15), inset 0 -2px 8px rgba(0, 0, 0, 0.4);">
+  <div class="relative bg-gradient-to-b from-amber-800 via-amber-900 to-amber-950 shadow-2xl" style="border-radius: 180px; padding: 16px; width: 100%; height: 360px; box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.6), inset 0 2px 8px rgba(255, 200, 100, 0.15), inset 0 -2px 8px rgba(0, 0, 0, 0.4);">
     
     <!-- Wood grain texture overlay -->
-    <div class="absolute inset-0 opacity-25" style="border-radius: 250px; background-image: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 6px);"></div>
+    <div class="absolute inset-0 opacity-25" style="border-radius: 180px; background-image: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 6px);"></div>
     
     <!-- Table Surface (Green Felt) -->
-    <div class="relative w-full h-full" style="border-radius: 230px; background: linear-gradient(135deg, #3d9970 0%, #2d7a57 50%, #1e5a3d 100%); box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 -5px 15px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(0, 0, 0, 0.2);">
+    <div class="relative w-full h-full" style="border-radius: 165px; background: linear-gradient(135deg, #3d9970 0%, #2d7a57 50%, #1e5a3d 100%); box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 -5px 15px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(0, 0, 0, 0.2);">
       
       <!-- Felt texture overlay (noise) -->
-      <div class="absolute inset-0 opacity-20" style="border-radius: 230px; background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%221.2%22 numOctaves=%225%22 /%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E'); background-size: 80px 80px;"></div>
+      <div class="absolute inset-0 opacity-20" style="border-radius: 165px; background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%221.2%22 numOctaves=%225%22 /%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E'); background-size: 80px 80px;"></div>
       
       <!-- Subtle dot pattern for felt texture -->
-      <div class="absolute inset-0 opacity-10" style="border-radius: 230px; background-image: radial-gradient(circle, rgba(0,0,0,0.4) 0.5px, transparent 0.5px); background-size: 6px 6px;"></div>
+      <div class="absolute inset-0 opacity-10" style="border-radius: 165px; background-image: radial-gradient(circle, rgba(0,0,0,0.4) 0.5px, transparent 0.5px); background-size: 6px 6px;"></div>
       
       <!-- Top-center highlight (glossy effect) -->
-      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-2/3 h-1/4 opacity-15" style="border-radius: 230px 230px 0 0; background: radial-gradient(ellipse at center top, rgba(255,255,255,0.8) 0%, transparent 60%);"></div>
+      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-2/3 h-1/4 opacity-15" style="border-radius: 165px 165px 0 0; background: radial-gradient(ellipse at center top, rgba(255,255,255,0.8) 0%, transparent 60%);"></div>
       
       <!-- Inner rim shadow for depth -->
-      <div class="absolute inset-0" style="border-radius: 230px; box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.4);"></div>
+      <div class="absolute inset-0" style="border-radius: 165px; box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.4);"></div>
 
       <!-- Player 1 (Bottom - Current Player with visible cards) -->
-      <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-24 flex flex-col items-center gap-3">
+      <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-20 flex flex-col items-center gap-2">
         <!-- Cards -->
-        <div class="flex gap-3 mb-1">
-          <img src="/cards/ace_of_spades.svg" alt="Ace of Spades" class="w-24 h-32 rounded-xl shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));" />
-          <img src="/cards/king_of_hearts.svg" alt="King of Hearts" class="w-24 h-32 rounded-xl shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));" />
+        <div class="flex gap-2 mb-1">
+          <img src="/cards/ace_of_spades.svg" alt="Ace of Spades" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
+          <img src="/cards/king_of_hearts.svg" alt="King of Hearts" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
         </div>
         <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-5 py-2.5 flex items-center gap-3 shadow-xl" style="border: 3px solid #fbbf24; box-shadow: 0 8px 20px rgba(0,0,0,0.5), 0 0 20px rgba(251, 191, 36, 0.3);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player1" alt="Player 1" class="w-11 h-11 rounded-full border-3 border-white shadow-lg" />
+        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 3px solid #fbbf24; box-shadow: 0 6px 16px rgba(0,0,0,0.5), 0 0 16px rgba(251, 191, 36, 0.3);">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player1" alt="Player 1" class="w-9 h-9 rounded-full border-2 border-white shadow-lg" />
           <div class="text-left">
-            <div class="text-white font-bold text-sm tracking-wide">You</div>
-            <div class="text-green-400 font-bold text-base">$1,500</div>
+            <div class="text-white font-bold text-xs tracking-wide">You</div>
+            <div class="text-green-400 font-bold text-sm">$1,500</div>
           </div>
         </div>
       </div>
 
       <!-- Player 2 (Left) -->
-      <div class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-20 flex flex-col items-center gap-2">
+      <div class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-16 flex flex-col items-center gap-1.5">
         <!-- Cards (face down) -->
-        <div class="flex gap-1.5 mb-1">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
+        <div class="flex gap-1 mb-0.5">
+          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
+          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
         </div>
         <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 2px solid #4b5563; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player2" alt="Player 2" class="w-9 h-9 rounded-full border-2 border-white shadow-md" />
+        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg" style="border: 2px solid #4b5563; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player2" alt="Player 2" class="w-8 h-8 rounded-full border-2 border-white shadow-md" />
           <div class="text-left">
-            <div class="text-white font-bold text-xs tracking-wide">varan307</div>
-            <div class="text-green-400 font-bold text-sm">$2,100</div>
+            <div class="text-white font-bold text-xs">varan307</div>
+            <div class="text-green-400 font-bold text-xs">$2,100</div>
           </div>
         </div>
       </div>
 
       <!-- Player 3 (Top) -->
-      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-20 flex flex-col items-center gap-2">
+      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-16 flex flex-col items-center gap-1.5">
         <!-- Cards (face down) -->
-        <div class="flex gap-1.5 mb-1">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
+        <div class="flex gap-1 mb-0.5">
+          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
+          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
         </div>
         <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 2px solid #4b5563; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player3" alt="Player 3" class="w-9 h-9 rounded-full border-2 border-white shadow-md" />
+        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg" style="border: 2px solid #4b5563; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player3" alt="Player 3" class="w-8 h-8 rounded-full border-2 border-white shadow-md" />
           <div class="text-left">
-            <div class="text-white font-bold text-xs tracking-wide">PokerPro88</div>
-            <div class="text-green-400 font-bold text-sm">$3,250</div>
+            <div class="text-white font-bold text-xs">PokerPro88</div>
+            <div class="text-green-400 font-bold text-xs">$3,250</div>
           </div>
         </div>
       </div>
 
       <!-- Player 4 (Right) -->
-      <div class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-20 flex flex-col items-center gap-2">
+      <div class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-16 flex flex-col items-center gap-1.5">
         <!-- Cards (face down) -->
-        <div class="flex gap-1.5 mb-1">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
+        <div class="flex gap-1 mb-0.5">
+          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
+          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
         </div>
         <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 2px solid #4b5563; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player4" alt="Player 4" class="w-9 h-9 rounded-full border-2 border-white shadow-md" />
+        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg" style="border: 2px solid #4b5563; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player4" alt="Player 4" class="w-8 h-8 rounded-full border-2 border-white shadow-md" />
           <div class="text-left">
-            <div class="text-white font-bold text-xs tracking-wide">AllInAnnie</div>
-            <div class="text-green-400 font-bold text-sm">$1,875</div>
+            <div class="text-white font-bold text-xs">AllInAnnie</div>
+            <div class="text-green-400 font-bold text-xs">$1,875</div>
           </div>
         </div>
       </div>
 
+      <!-- Community Cards (Center) -->
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-12 flex gap-1.5" id="communityCards">
+        <!-- Cards will be dynamically added here by game.ts -->
+      </div>
+
       <!-- Center Pot -->
-      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5">
-        <div class="text-white font-bold text-xs tracking-widest bg-black bg-opacity-70 px-4 py-1.5 rounded-full shadow-lg" style="letter-spacing: 0.1em;">POT</div>
-        <div class="text-yellow-400 font-bold text-4xl tracking-tight" style="text-shadow: 0 2px 10px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3);">$850</div>
+      <div class="absolute top-[15%] left-[22%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5">
+        <div class="text-white font-bold text-[10px] tracking-widest bg-black bg-opacity-70 px-2 py-0.5 rounded-full shadow-lg" style="letter-spacing: 0.1em;">POT</div>
+        <div id="potAmount" class="text-yellow-400 font-bold text-2xl tracking-tight" style="text-shadow: 0 2px 10px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3);">$850</div>
       </div>
       
     </div>

@@ -99,12 +99,12 @@
                               </svg>
                               <%= game.player_count || 0 %>/<%= game.max_players %> Players
                             </span>
-                            <span class="px-2 py-1 bg-<%= game.state === 'waiting' ? 'green' : 'yellow' %>-100 text-<%= game.state === 'waiting' ? 'green' : 'yellow' %>-700 rounded-full text-xs font-medium">
-                              <%= game.state === 'waiting' ? 'Waiting' : 'In Progress' %>
+                            <span class="px-2 py-1 bg-<%= game.status === 'waiting' ? 'green' : 'yellow' %>-100 text-<%= game.status === 'waiting' ? 'green' : 'yellow' %>-700 rounded-full text-xs font-medium">
+                              <%= game.status === 'waiting' ? 'Waiting' : 'In Progress' %>
                             </span>
                           </div>
                         </div>
-                        <% if (game.state === 'waiting') { %>
+                        <% if (game.status === 'waiting') { %>
                           <button
                             onclick="location.href='/games/<%= game.id %>'"
                             class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
@@ -187,6 +187,6 @@
     <script type="module">
       import '/main.ts';
     </script>
-    <script type="module" src="/chat.ts"></script>
+    <script type="module" src="/lobby.ts"></script>
   </body>
 </html>

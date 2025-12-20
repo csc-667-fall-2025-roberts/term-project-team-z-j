@@ -18,8 +18,8 @@ const pool = new Pool({
 
 // Simple helper function to run queries
 export async function query<T = any>(text: string, params?: any[]): Promise<{ rows: T[] }> {
-  // In class, we usually just return pool.query(...)
-  return pool.query(text, params);
+  const result = await pool.query(text, params);
+  return result as { rows: T[] };
 }
 
 // Optional: quick self-test on startup (used by server.ts)
