@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../database';
 import { PokerGameEngine } from '../poker/PokerGameEngine';
-import { registerGame } from './pokerGameController';
+import { getGame, registerGame } from './pokerGameController';
 
 // Create a new game room
 export async function createGame(req: Request, res: Response) {
@@ -454,5 +454,168 @@ export async function leaveGame(req: Request, res: Response) {
     } catch (error) {
         console.error('[leaveGame] error:', error);
         return res.status(500).json({ error: 'Failed to leave game' });
+    }
+}
+
+
+// End a game (owner only)
+export async function endGame(req: Request, res: Response) {
+    const gameId = parseInt(req.params.id);
+
+    try {
+        const userId = req.session.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        if (isNaN(gameId)) {
+            return res.status(400).json({ error: 'Invalid game ID' });
+        }
+
+        // Check if user is the owner
+        const roomResult = await pool.query(
+            `SELECT owner_id, status FROM game_room WHERE id = $1`,
+            [gameId]
+        );
+
+        if ((roomResult.rowCount ?? 0) === 0) {
+            return res.status(404).json({ error: 'Game not found' });
+        }
+
+        const room = roomResult.rows[0];
+
+        if (room.owner_id !== userId) {
+            return res.status(403).json({ error: 'Only the owner can end the game' });
+        }
+
+        if (room.status !== 'in_progress') {
+            return res.status(400).json({ error: 'Game is not in progress' });
+        }
+
+        // Get the poker engine and get the leaderboard before ending
+        const pokerEngine = getGame(gameId);
+        let leaderboard: any[] = [];
+
+        if (pokerEngine) {
+            // Get the leaderboard BEFORE ending the game
+            const players = pokerEngine.getPlayers();
+            leaderboard = players.map((p: any) => ({
+                userId: p.userId,
+                username: p.username,
+                stack: p.stack
+            }));
+
+            // End the game through the engine
+            await pokerEngine.endGame();
+            // Don't unregister yet - let getGameResults access it
+            // unregisterGame(gameId);
+        }
+
+        // Update game status to finished
+        await pool.query(
+            `UPDATE game_room SET status = 'finished' WHERE id = $1`,
+            [gameId]
+        );
+
+        // Broadcast game ended to all players with leaderboard data
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`room:${gameId}`).emit('game:ended', {
+                gameId,
+                endedBy: userId,
+                leaderboard
+            });
+        }
+
+        return res.json({ success: true, leaderboard });
+    } catch (error) {
+        console.error('[endGame] error:', error);
+        return res.status(500).json({ error: 'Failed to end game' });
+    }
+}
+
+// Get game results/leaderboard
+export async function getGameResults(req: Request, res: Response) {
+    const gameId = parseInt(req.params.id);
+
+    try {
+        const userId = req.session.user?.id;
+        const username = req.session.user?.username;
+
+        if (!userId) {
+            return res.redirect('/auth/login');
+        }
+
+        if (isNaN(gameId)) {
+            return res.status(400).render('pages/error', {
+                statusCode: 400,
+                title: 'Invalid Game',
+                message: 'Invalid game ID',
+                user: req.session?.user || null,
+            });
+        }
+
+        // Get game room details
+        const roomResult = await pool.query(
+            `SELECT id, name, status FROM game_room WHERE id = $1`,
+            [gameId]
+        );
+
+        if ((roomResult.rowCount ?? 0) === 0) {
+            return res.status(404).render('pages/error', {
+                statusCode: 404,
+                title: 'Game Not Found',
+                message: 'The game room does not exist',
+                user: req.session?.user || null,
+            });
+        }
+
+        // Get players with their final stacks (leaderboard)
+        // First try to get from the poker engine if still active
+        const pokerEngine = getGame(gameId);
+        let leaderboard: any[] = [];
+
+        if (pokerEngine) {
+            // Get current stacks from the engine
+            const players = pokerEngine.getPlayers();
+            leaderboard = players
+                .map((p: any) => ({
+                    user_id: p.userId,
+                    username: p.username,
+                    stack: p.stack
+                }))
+                .sort((a: any, b: any) => b.stack - a.stack);
+        } else {
+            // Fallback: get players from room_players table with default stack
+            const playersResult = await pool.query(
+                `SELECT 
+                    rp.user_id,
+                    u.username,
+                    1500 as stack
+                FROM room_players rp
+                JOIN users u ON rp.user_id = u.id
+                WHERE rp.room_id = $1
+                ORDER BY rp.position`,
+                [gameId]
+            );
+            leaderboard = playersResult.rows;
+        }
+
+        res.render('pages/results', {
+            gameId,
+            roomId: gameId,
+            username,
+            userId,
+            leaderboard
+        });
+    } catch (error) {
+        console.error('[getGameResults] error:', error);
+        res.status(500).render('pages/error', {
+            statusCode: 500,
+            title: 'Server Error',
+            message: 'Failed to load game results',
+            user: req.session?.user || null,
+        });
     }
 }

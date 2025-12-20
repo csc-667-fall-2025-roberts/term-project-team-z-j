@@ -419,6 +419,7 @@ export class PokerGameEngine {
             action: actionType,
             amount: actionAmount,
             pot: this.gameState.pot,
+            currentBet: this.gameState.currentBet,
         });
 
         // Broadcast pot update
@@ -452,6 +453,8 @@ export class PokerGameEngine {
         this.io.to(`room:${this.gameState.roomId}`).emit('game:turn:started', {
             userId: currentPlayer.userId,
             timeRemaining,
+            currentBet: this.gameState.currentBet,
+            playerBet: currentPlayer.currentBet,
         });
 
         // Start interval to emit tick events every second (Requirement 3.2)
@@ -937,5 +940,50 @@ export class PokerGameEngine {
                 });
             }
         }, 5000); // 5 second delay
+    }
+
+    /**
+     * End the game manually
+     * Called when the owner ends the game
+     */
+    async endGame(): Promise<void> {
+        // Stop any active timer
+        this.stopTurnTimer();
+
+        // Mark hand as inactive
+        this.gameState.isHandActive = false;
+
+        // Get final standings
+        const players = Array.from(this.gameState.players.values())
+            .sort((a, b) => b.stack - a.stack);
+
+        // Emit game ended event
+        this.io.to(`room:${this.gameState.roomId}`).emit('game:ended', {
+            winner: players.length > 0 ? {
+                userId: players[0].userId,
+                username: players[0].username,
+                stack: players[0].stack
+            } : null,
+            leaderboard: players.map(p => ({
+                userId: p.userId,
+                username: p.username,
+                stack: p.stack
+            }))
+        });
+    }
+
+    /**
+     * Get all players with their current state
+     * Used for generating leaderboard
+     */
+    getPlayers(): Array<{ userId: number; username: string; stack: number; position: number }> {
+        return Array.from(this.gameState.players.values())
+            .map(p => ({
+                userId: p.userId,
+                username: p.username,
+                stack: p.stack,
+                position: p.position
+            }))
+            .sort((a, b) => b.stack - a.stack);
     }
 }

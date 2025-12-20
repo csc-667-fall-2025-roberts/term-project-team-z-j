@@ -11,89 +11,46 @@
 
     <!-- Right Side: Action Buttons -->
     <div class="flex items-center gap-6">
-      
-      <!-- Fold Button -->
       <button id="foldBtn" class="text-red-500 hover:text-red-600 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
         FOLD
       </button>
-
-      <!-- Check Button -->
       <button id="checkBtn" class="text-green-600 hover:text-green-700 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
         CHECK
       </button>
-
-      <!-- Call Button -->
       <button id="callBtn" class="text-blue-600 hover:text-blue-700 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
         CALL
       </button>
-
-      <!-- Raise Section -->
       <div class="flex items-center gap-4">
-        
-        <!-- Bet Amount -->
         <div class="text-gray-900 font-extrabold text-2xl tracking-wide" style="text-shadow: 1px 1px 2px rgba(255,255,255,0.7);">
           <span id="raiseAmount">$50</span>
         </div>
-
-        <!-- Slider -->
-        <input 
-          type="range" 
-          id="betSlider" 
-          min="10" 
-          max="1000" 
-          value="50" 
-          step="10"
+        <input type="range" id="betSlider" min="10" max="1000" value="50" step="10"
           class="w-56 h-2.5 rounded-lg appearance-none cursor-pointer"
-          style="background: linear-gradient(to right, #60a5fa 0%, #3b82f6 100%);"
-        />
-
-        <!-- Raise Button -->
+          style="background: linear-gradient(to right, #60a5fa 0%, #3b82f6 100%);" />
         <button id="raiseBtn" class="text-orange-500 hover:text-orange-600 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
           RAISE
         </button>
-        
-        <!-- All-In Button -->
         <button id="allinBtn" class="text-purple-600 hover:text-purple-700 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
           ALL-IN
         </button>
       </div>
-
     </div>
-
   </div>
 </div>
 
-<!-- Chat Panel (Draggable) -->
+<!-- Chat Panel -->
 <div id="chatPanel" class="hidden fixed left-4 bottom-24 w-96 bg-white rounded-xl shadow-2xl border border-gray-300 overflow-hidden" style="z-index: 1000;">
   <div id="chatHeader" class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 flex justify-between items-center cursor-move">
     <h3 class="font-semibold text-white text-lg select-none">💬 Game Chat</h3>
     <button id="closeChatBtn" class="text-white hover:bg-white hover:bg-opacity-20 px-2 py-1 rounded transition">✕</button>
   </div>
-
   <div id="chatMessages" class="h-80 overflow-y-auto p-4 space-y-3 bg-gray-50">
-    <!-- Sample message with dicebear avatar -->
-    <div class="flex gap-3 items-start">
-      <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player2" alt="varan307" class="flex-shrink-0 w-10 h-10 rounded-full border-2 border-gray-300 shadow-md" />
-      <div class="flex-1">
-        <div class="flex items-baseline gap-2 mb-1">
-          <span class="font-semibold text-gray-900 text-sm">varan307</span>
-          <span class="text-xs text-gray-500">12:34 PM</span>
-        </div>
-        <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-200">
-          <p class="text-gray-700 text-sm">Good luck everyone!</p>
-        </div>
-      </div>
-    </div>
+    <p class="text-gray-400 text-center text-sm">Click CHAT to load messages...</p>
   </div>
-
   <div class="p-4 border-t bg-white">
     <div class="flex gap-2">
-      <input 
-        type="text" 
-        id="chatInput" 
-        placeholder="Type a message..." 
-        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-      />
+      <input type="text" id="chatInput" placeholder="Type a message..." 
+        class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
       <button id="sendChatBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm">
         Send
       </button>
@@ -102,7 +59,6 @@
 </div>
 
 <style>
-  /* Custom slider styling */
   #betSlider::-webkit-slider-thumb {
     appearance: none;
     width: 22px;
@@ -112,13 +68,7 @@
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     border: 2px solid white;
-    transition: transform 0.2s;
   }
-  
-  #betSlider::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-  }
-  
   #betSlider::-moz-range-thumb {
     width: 22px;
     height: 22px;
@@ -127,137 +77,213 @@
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     border: 2px solid white;
-    transition: transform 0.2s;
-  }
-  
-  #betSlider::-moz-range-thumb:hover {
-    transform: scale(1.15);
   }
 </style>
 
 <script>
-  const slider = document.getElementById('betSlider');
-  const raiseAmountDisplay = document.getElementById('raiseAmount');
-  
+(function() {
+  // Slider
+  var slider = document.getElementById('betSlider');
+  var raiseAmountDisplay = document.getElementById('raiseAmount');
   if (slider && raiseAmountDisplay) {
-    slider.addEventListener('input', (e) => {
+    slider.addEventListener('input', function(e) {
       raiseAmountDisplay.textContent = '$' + e.target.value;
     });
   }
 
-  const chatToggle = document.getElementById('chatToggle');
-  const chatPanel = document.getElementById('chatPanel');
-  const closeChatBtn = document.getElementById('closeChatBtn');
+  // Chat panel elements
+  var chatToggle = document.getElementById('chatToggle');
+  var chatPanel = document.getElementById('chatPanel');
+  var closeChatBtn = document.getElementById('closeChatBtn');
+  var sendChatBtn = document.getElementById('sendChatBtn');
+  var chatInput = document.getElementById('chatInput');
+  var chatMessages = document.getElementById('chatMessages');
   
+  // Chat panel toggle
   if (chatToggle && chatPanel) {
-    chatToggle.addEventListener('click', () => {
+    chatToggle.addEventListener('click', function() {
       chatPanel.classList.toggle('hidden');
+      if (!chatPanel.classList.contains('hidden')) {
+        loadChatMessages();
+      }
     });
   }
   
   if (closeChatBtn && chatPanel) {
-    closeChatBtn.addEventListener('click', () => {
+    closeChatBtn.addEventListener('click', function() {
       chatPanel.classList.add('hidden');
     });
   }
 
-  // Make chat panel draggable
-  const chatHeader = document.getElementById('chatHeader');
-  let isDragging = false;
-  let currentX;
-  let currentY;
-  let initialX;
-  let initialY;
-  let xOffset = 0;
-  let yOffset = 0;
+  // Draggable chat panel
+  var chatHeader = document.getElementById('chatHeader');
+  var isDragging = false;
+  var currentX = 0, currentY = 0, initialX = 0, initialY = 0;
+  var xOffset = 0, yOffset = 0;
 
   if (chatHeader && chatPanel) {
-    chatHeader.addEventListener('mousedown', dragStart);
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', dragEnd);
-  }
-
-  function dragStart(e) {
-    if (e.target === closeChatBtn || e.target.closest('#closeChatBtn')) return;
-    
-    initialX = e.clientX - xOffset;
-    initialY = e.clientY - yOffset;
-
-    if (e.target === chatHeader || chatHeader.contains(e.target)) {
+    chatHeader.addEventListener('mousedown', function(e) {
+      if (e.target === closeChatBtn || e.target.closest('#closeChatBtn')) return;
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
       isDragging = true;
-    }
+    });
+    
+    document.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        xOffset = currentX;
+        yOffset = currentY;
+        chatPanel.style.transform = 'translate(' + currentX + 'px, ' + currentY + 'px)';
+      }
+    });
+    
+    document.addEventListener('mouseup', function() {
+      initialX = currentX;
+      initialY = currentY;
+      isDragging = false;
+    });
   }
 
-  function drag(e) {
-    if (isDragging) {
-      e.preventDefault();
-      
-      currentX = e.clientX - initialX;
-      currentY = e.clientY - initialY;
-
-      xOffset = currentX;
-      yOffset = currentY;
-
-      setTranslate(currentX, currentY, chatPanel);
-    }
-  }
-
-  function dragEnd(e) {
-    initialX = currentX;
-    initialY = currentY;
-    isDragging = false;
-  }
-
-  function setTranslate(xPos, yPos, el) {
-    el.style.transform = `translate(${xPos}px, ${yPos}px)`;
-  }
-
-  const sendChatBtn = document.getElementById('sendChatBtn');
-  const chatInput = document.getElementById('chatInput');
-  const chatMessages = document.getElementById('chatMessages');
-  
-  // Get current time
-  function getCurrentTime() {
-    const now = new Date();
-    return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  // Helper functions
+  function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
   
-  function sendMessage() {
-    if (chatInput && chatMessages && chatInput.value.trim()) {
-      const userName = 'You';
-      const messageText = chatInput.value;
-      const time = getCurrentTime();
-      
-      const messageDiv = document.createElement('div');
-      messageDiv.className = 'flex gap-3 items-start';
-      messageDiv.innerHTML = `
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player1" alt="${userName}" class="flex-shrink-0 w-10 h-10 rounded-full border-2 border-blue-300 shadow-md" />
-        <div class="flex-1">
-          <div class="flex items-baseline gap-2 mb-1">
-            <span class="font-semibold text-gray-900 text-sm">${userName}</span>
-            <span class="text-xs text-gray-500">${time}</span>
-          </div>
-          <div class="bg-blue-100 p-3 rounded-lg rounded-tl-none shadow-sm border border-blue-200">
-            <p class="text-gray-700 text-sm">${messageText}</p>
-          </div>
-        </div>
-      `;
-      
-      chatMessages.appendChild(messageDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      chatInput.value = '';
+  function formatTime(dateString) {
+    var date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  
+  // Show chat message - exposed globally for socket handler in game.ejs
+  function showChatMessage(msg) {
+    if (!chatMessages) return;
+    
+    // Remove placeholder
+    var placeholder = chatMessages.querySelector('.text-gray-400.text-center');
+    if (placeholder) placeholder.remove();
+    
+    // Use sender_id (from API) or user_id (from socket)
+    var senderId = msg.sender_id || msg.user_id;
+    var isCurrentUser = senderId === window.currentUserId;
+    var time = formatTime(msg.created_at);
+    var username = escapeHtml(msg.username || 'Unknown');
+    var content = escapeHtml(msg.content);
+    
+    var messageDiv = document.createElement('div');
+    messageDiv.className = 'flex gap-3 items-start';
+    
+    var borderClass = isCurrentUser ? 'border-blue-300' : 'border-gray-300';
+    var bgClass = isCurrentUser ? 'bg-blue-100 border-blue-200' : 'bg-white border-gray-200';
+    
+    messageDiv.innerHTML = 
+      '<img src="https://api.dicebear.com/7.x/avataaars/svg?seed=' + username + '" alt="' + username + '" class="flex-shrink-0 w-10 h-10 rounded-full border-2 ' + borderClass + ' shadow-md" />' +
+      '<div class="flex-1">' +
+        '<div class="flex items-baseline gap-2 mb-1">' +
+          '<span class="font-semibold text-gray-900 text-sm">' + username + '</span>' +
+          '<span class="text-xs text-gray-500">' + time + '</span>' +
+        '</div>' +
+        '<div class="' + bgClass + ' p-3 rounded-lg rounded-tl-none shadow-sm border">' +
+          '<p class="text-gray-700 text-sm">' + content + '</p>' +
+        '</div>' +
+      '</div>';
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  
+  // Expose showChatMessage globally so game.ejs socket can call it
+  window.showChatMessage = showChatMessage;
+  
+  // Load chat messages from API
+  function loadChatMessages() {
+    if (!chatMessages) return;
+    
+    var gameId = window.currentGameId;
+    console.log('[Chat] Loading messages for game:', gameId);
+    
+    if (!gameId) {
+      chatMessages.innerHTML = '<p class="text-red-400 text-center text-sm">Game ID not found</p>';
+      return;
     }
+    
+    chatMessages.innerHTML = '<p class="text-gray-400 text-center text-sm">Loading...</p>';
+    
+    fetch('/api/rooms/' + gameId + '/messages')
+      .then(function(response) {
+        return response.json();
+      })
+      .then(function(data) {
+        console.log('[Chat] Messages loaded:', data);
+        
+        if (data.success && data.messages && data.messages.length > 0) {
+          chatMessages.innerHTML = '';
+          data.messages.forEach(function(msg) {
+            showChatMessage(msg);
+          });
+        } else if (data.error) {
+          chatMessages.innerHTML = '<p class="text-red-400 text-center text-sm">' + escapeHtml(data.error) + '</p>';
+        } else {
+          chatMessages.innerHTML = '<p class="text-gray-400 text-center text-sm">No messages yet. Start the conversation!</p>';
+        }
+      })
+      .catch(function(error) {
+        console.error('[Chat] Failed to load messages:', error);
+        chatMessages.innerHTML = '<p class="text-red-400 text-center text-sm">Failed to load messages</p>';
+      });
+  }
+  
+  // Send chat message
+  function sendChatMessage() {
+    if (!chatInput || !chatMessages) return;
+    
+    var gameId = window.currentGameId;
+    var content = chatInput.value.trim();
+    
+    if (!content || !gameId) return;
+    
+    chatInput.disabled = true;
+    if (sendChatBtn) sendChatBtn.disabled = true;
+    
+    fetch('/api/rooms/' + gameId + '/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: content })
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      if (data.success) {
+        chatInput.value = '';
+      } else {
+        console.error('[Chat] Failed to send:', data.error);
+      }
+    })
+    .catch(function(error) {
+      console.error('[Chat] Error sending message:', error);
+    })
+    .finally(function() {
+      chatInput.disabled = false;
+      if (sendChatBtn) sendChatBtn.disabled = false;
+      chatInput.focus();
+    });
   }
   
   if (sendChatBtn) {
-    sendChatBtn.addEventListener('click', sendMessage);
+    sendChatBtn.addEventListener('click', sendChatMessage);
   }
   
   if (chatInput) {
-    chatInput.addEventListener('keypress', (e) => {
+    chatInput.addEventListener('keypress', function(e) {
       if (e.key === 'Enter') {
-        sendMessage();
+        sendChatMessage();
       }
     });
   }
+})();
 </script>

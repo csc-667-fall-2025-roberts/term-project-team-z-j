@@ -45,13 +45,23 @@
             <!-- Left Side - Game Control Buttons -->
             <div class="flex flex-col gap-3 -mt-64">
               <% if (typeof ownerId !== 'undefined' && ownerId === userId) { %>
-                <button
-                  id="startGameBtn"
-                  onclick="startGame()"
-                  class="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap"
-                >
-                  Start Game
-                </button>
+                <% if (typeof gameStatus !== 'undefined' && gameStatus === 'in_progress') { %>
+                  <button
+                    id="endGameBtn"
+                    onclick="endGame()"
+                    class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap"
+                  >
+                    End Game
+                  </button>
+                <% } else { %>
+                  <button
+                    id="startGameBtn"
+                    onclick="startGame()"
+                    class="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap"
+                  >
+                    Start Game
+                  </button>
+                <% } %>
               <% } %>
               <button
                 id="leaveGameBtn"
@@ -68,7 +78,7 @@
             </div>
 
             <!-- Right Side - Timer -->
-            <div class="flex items-center justify-center -mt-64">
+            <div class="flex flex-col items-center justify-center -mt-64 gap-4">
               <div class="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-lg">
                 <div class="flex flex-col items-center gap-2">
                   <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,8 +95,7 @@
           </div>
         </div>
       </div>
-    </div>
-
+      
     <%- include('../utils/game-elements') %>
     <script>
       // Make userId and gameId available to the frontend
@@ -104,11 +113,8 @@
           if (response.ok) {
             // Don't reload - the socket events will handle the game start
             console.log('[Game] Game started successfully');
-            // Hide the start button
-            const startBtn = document.getElementById('startGameBtn');
-            if (startBtn) {
-              startBtn.style.display = 'none';
-            }
+            // Switch Start Game button to End Game button
+            switchToEndGameButton();
           } else {
             const data = await response.json();
             alert(data.error || 'Failed to start game');
@@ -116,6 +122,43 @@
         } catch (error) {
           console.error('Error starting game:', error);
           alert('Failed to start game');
+        }
+      }
+      
+      // End game function (owner only)
+      async function endGame() {
+        if (!confirm('Are you sure you want to end this game? This will show the final results.')) {
+          return;
+        }
+        
+        try {
+          const response = await fetch(`/api/games/${window.currentGameId}/end`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            console.log('[Game] Game ended successfully');
+            // Redirect to results page
+            window.location.href = `/games/${window.currentGameId}/results`;
+          } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to end game');
+          }
+        } catch (error) {
+          console.error('Error ending game:', error);
+          alert('Failed to end game');
+        }
+      }
+      
+      // Switch Start Game button to End Game button
+      function switchToEndGameButton() {
+        const startBtn = document.getElementById('startGameBtn');
+        if (startBtn) {
+          startBtn.id = 'endGameBtn';
+          startBtn.textContent = 'End Game';
+          startBtn.className = 'bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap';
+          startBtn.onclick = endGame;
         }
       }
       
@@ -159,14 +202,15 @@
           return;
         }
         
-        // Game state
+        // Game state - initialize gameStarted based on server-side status
         const gameState = {
           isMyTurn: false,
           currentBet: 0,
           pot: 0,
           holeCards: null,
           boardCards: [],
-          handNumber: 0
+          handNumber: 0,
+          gameStarted: '<%= typeof gameStatus !== "undefined" ? gameStatus : "waiting" %>' === 'in_progress'
         };
         
         // Initialize socket
@@ -205,19 +249,30 @@
           console.log('[Socket] ===== PLAYER JOINED =====');
           console.log('[Socket] Player data:', data);
           showNotification(`${data.username || 'A player'} joined the game`, 'success');
-          // Reload page to show new player (only if game hasn't started)
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          // Only reload if game hasn't started yet (to avoid disrupting active game)
+          if (!gameState.gameStarted) {
+            const startBtn = document.getElementById('startGameBtn');
+            if (startBtn) {
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            }
+          }
         });
         
         // Player left event
         socket.on('room:player:left', (data) => {
           console.log('[Socket] ===== PLAYER LEFT =====');
           showNotification('A player left the game', 'warning');
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          // Only reload if game hasn't started yet
+          if (!gameState.gameStarted) {
+            const startBtn = document.getElementById('startGameBtn');
+            if (startBtn) {
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            }
+          }
         });
         
         // Game started event
@@ -225,11 +280,11 @@
           console.log('[Socket] ===== GAME STARTED =====');
           showNotification('Game has started!', 'success');
           
-          // Hide start button
-          const startBtn = document.getElementById('startGameBtn');
-          if (startBtn) {
-            startBtn.style.display = 'none';
-          }
+          // Mark game as started to prevent reloads
+          gameState.gameStarted = true;
+          
+          // Switch Start Game button to End Game button
+          switchToEndGameButton();
           
           // Register poker handlers now that game has started
           console.log('[Socket] Registering poker handlers...');
@@ -274,6 +329,17 @@
           
           const isMyTurn = Number(data.userId) === Number(userId);
           gameState.isMyTurn = isMyTurn;
+          
+          // Update current bet from server
+          if (data.currentBet !== undefined) {
+            gameState.currentBet = data.currentBet;
+          }
+          
+          // Update call button with the amount to call
+          if (isMyTurn && data.currentBet !== undefined && data.playerBet !== undefined) {
+            const callAmount = data.currentBet - data.playerBet;
+            updateCallButton(callAmount);
+          }
           
           updateActionButtons(isMyTurn);
           
@@ -376,15 +442,29 @@
         socket.on('game:ended', (data) => {
           console.log('[Socket] ===== GAME ENDED =====', data);
           
+          // Only process game ended if the game was actually started
+          if (!gameState.gameStarted) {
+            console.log('[Socket] Ignoring game:ended - game was not started');
+            return;
+          }          
           if (data.winner) {
             showNotification(`Game Over! ${data.winner.username} wins with $${data.winner.stack}!`, 'success');
           } else {
             showNotification('Game Over!', 'info');
           }
           
+          
+          // Store leaderboard in sessionStorage for the results page
+          if (data.leaderboard) {
+            sessionStorage.setItem(`game_${gameId}_leaderboard`, JSON.stringify(data.leaderboard));
+          }
           // Disable all action buttons
           updateActionButtons(false);
-        });
+          
+          // Redirect all players to results page after a short delay
+          setTimeout(() => {
+            window.location.href = `/games/${gameId}/results`;
+          }, 2000);        });
         
         // Game error event
         socket.on('game:error', (data) => {
@@ -567,6 +647,17 @@
           }
         }
         
+        function updateCallButton(callAmount) {
+          const callBtn = document.getElementById('callBtn');
+          if (callBtn) {
+            if (callAmount > 0) {
+              callBtn.textContent = `CALL $${callAmount}`;
+            } else {
+              callBtn.textContent = 'CALL';
+            }
+          }
+        }
+        
         function updatePlayerStack(playerId, stack) {
           const playerElement = document.querySelector(`[data-player="${playerId}"]`);
           if (playerElement) {
@@ -624,6 +715,18 @@
         
         // Initialize action buttons as disabled
         updateActionButtons(false);
+        
+        // ===== CHAT MESSAGE HANDLER =====
+        // Listen for new chat messages and update the chat panel
+        socket.on('room:message:new', (messageData) => {
+          console.log('[Socket] Chat message received:', messageData);
+          if (messageData.room_id === gameId) {
+            // Call the showChatMessage function from actions.ejs if it exists
+            if (typeof window.showChatMessage === 'function') {
+              window.showChatMessage(messageData);
+            }
+          }
+        });
         
         console.log('[Game Page] Socket initialized and all listeners registered');
       });

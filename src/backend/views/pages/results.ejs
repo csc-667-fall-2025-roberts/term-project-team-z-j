@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Results - Texas Hold 'em</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300 relative overflow-hidden">
+      <!-- Navbar -->
+      <div class="absolute top-8 left-12 z-20">
+        <h2 class="text-4xl font-serif italic text-blue-900" style="font-family: 'Georgia', serif;">POKER</h2>
+      </div>
+
+      <!-- Decorative Cards Background -->
+      <div class="absolute right-10 top-1/2 transform -translate-y-1/2 opacity-20 pointer-events-none">
+        <div class="relative">
+          <img src="/cards/ace_of_spades.svg" alt="" class="w-48 h-72 transform rotate-12 absolute right-0" />
+          <img src="/cards/king_of_hearts.svg" alt="" class="w-48 h-72 transform -rotate-6 absolute right-16 top-8" />
+          <img src="/cards/queen_of_diamonds.svg" alt="" class="w-48 h-72 transform rotate-3 absolute right-32 top-4" />
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="flex items-center justify-center min-h-screen px-8">
+        <div class="w-full max-w-6xl">
+          <div class="flex items-center justify-center">
+            <div class="bg-white/30 backdrop-blur-sm rounded-3xl p-8 w-full max-w-lg shadow-xl border border-white/40">
+              <h2 class="text-3xl font-bold text-gray-800 text-center mb-8">Game Results</h2>
+              
+              <!-- Leaderboard Container -->
+              <div id="leaderboardContainer" class="space-y-4 mb-8"></div>
+                <!-- Will be populated by JavaScript -->
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="space-y-3">
+                <button 
+                  onclick="playAgain()"
+                  class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-4 rounded-full transition-all duration-300 shadow-lg"
+                >
+                  Play Again
+                </button>
+                <button 
+                  onclick="location.href='/lobby'"
+                  class="w-full text-gray-600 hover:text-gray-800 font-medium py-2 transition-colors"
+                >
+                  Return to Lobby
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <%- include('../utils/footer') %>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const roomId = <%= typeof roomId !== 'undefined' ? roomId : 'null' %>;
+      const gameId = <%= typeof gameId !== 'undefined' ? gameId : 'null' %>;
+      
+      // Server-side leaderboard data
+      const serverLeaderboard = <%- JSON.stringify(typeof leaderboard !== 'undefined' ? leaderboard : []) %>;
+      
+      // Try to get leaderboard from sessionStorage (more accurate if available)
+      function getLeaderboard() {
+        if (gameId) {
+          const stored = sessionStorage.getItem(`game_${gameId}_leaderboard`);
+          if (stored) {
+            try {
+              const parsed = JSON.parse(stored);
+              if (parsed && parsed.length > 0) {
+                // Clear the stored data after reading
+                sessionStorage.removeItem(`game_${gameId}_leaderboard`);
+                return parsed;
+              }
+            } catch (e) {
+              console.error('Error parsing stored leaderboard:', e);
+            }
+          }
+        }
+        return serverLeaderboard;
+      }
+      
+      // Render leaderboard
+      function renderLeaderboard(leaderboard) {
+        const container = document.getElementById('leaderboardContainer');
+        if (!container) return;
+        
+        if (!leaderboard || leaderboard.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white/60 backdrop-blur-sm rounded-full px-6 py-4 flex items-center justify-center border border-white/50 shadow-sm">
+              <span class="text-gray-500">No results available</span>
+            </div>
+          `;
+          return;
+        }
+        
+        // Sort by stack descending
+        const sorted = [...leaderboard].sort((a, b) => (b.stack || 0) - (a.stack || 0));
+        
+        container.innerHTML = sorted.map((player, index) => {
+          const username = player.username || 'Unknown';
+          const stack = player.stack || 0;
+          const isFirst = index === 0;
+          const ringClass = isFirst ? 'ring-2 ring-yellow-400' : '';
+          const borderClass = isFirst ? 'border-yellow-400' : 'border-gray-300';
+          const stackClass = stack > 0 ? 'text-green-600' : 'text-red-500';
+          
+          return `
+            <div class="bg-white/60 backdrop-blur-sm rounded-full px-6 py-4 flex items-center justify-between border border-white/50 shadow-sm ${ringClass}">
+              <div class="flex items-center gap-3">
+                <span class="text-lg font-bold text-gray-700">#${index + 1}.</span>
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${username}" alt="${username}" class="w-10 h-10 rounded-full border-2 ${borderClass}" />
+                <span class="font-semibold text-gray-800">${username}</span>
+              </div>
+              <span class="font-bold ${stackClass}">
+                $${stack}
+              </span>
+            </div>
+          `;
+        }).join('');
+      }
+      
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', () => {
+        const leaderboard = getLeaderboard();
+        renderLeaderboard(leaderboard);
+      });
+      
+      async function playAgain() {
+        if (roomId) {
+          // Try to rejoin the same room if it's reset
+          try {
+            const response = await fetch(`/api/games/${roomId}/reset`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' }
+            });
+            
+            if (response.ok) {
+              window.location.href = `/games/${roomId}`;
+              return;
+            }
+          } catch (error) {
+            console.error('Error resetting game:', error);
+          }
+        }
+        // Fallback to lobby
+        window.location.href = '/lobby';
+      }
+    </script>
+  </body>
+</html>

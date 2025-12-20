@@ -8,7 +8,7 @@ import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import ViteExpress from 'vite-express';
 
-import { createGame, getGameDetails, getGames, joinGame, leaveGame, startGame } from './controllers/gameController';
+import { createGame, endGame, getGameDetails, getGameResults, getGames, joinGame, leaveGame, startGame } from './controllers/gameController';
 import { getMessages, sendMessage } from './controllers/messageController';
 import { getGame, registerPokerHandlers } from './controllers/pokerGameController';
 import pool, { testConnection } from './database';
@@ -123,6 +123,14 @@ io.on('connection', (socket) => {
         userToSocket.set(numericUserId, socket.id);
 
         console.log(`[socket] User ${numericUserId} (type: ${typeof numericUserId}) identified on socket ${socket.id}`);
+    });
+
+    // Handle joining the lobby chat room
+    socket.on('lobby:join', () => {
+        console.log('[socket] ===== LOBBY:JOIN EVENT RECEIVED =====');
+        socket.join('lobby');
+        console.log(`[socket] ${socket.id} joined lobby chat`);
+        socket.emit('lobby:joined', { success: true });
     });
 
     socket.on('room:join', (data: any) => {
@@ -243,8 +251,8 @@ io.on('connection', (socket) => {
 // ---------- ROUTES ----------
 
 // landing page
-app.get('/', (_req, res) => {
-    res.render('pages/index');
+app.get('/', (req, res) => {
+    res.render('pages/index', { user: req.session?.user || null });
 });
 
 // login page (GET)
@@ -359,6 +367,12 @@ app.post('/api/games/:id/start', requireAuth, startGame);
 // Leave game (API)
 app.post('/api/games/:id/leave', requireAuth, leaveGame);
 
+// End game (API)
+app.post('/api/games/:id/end', requireAuth, endGame);
+
+// Game results page
+app.get('/games/:id/results', requireAuth, getGameResults);
+
 // ---------- PAGE ROUTES ----------
 
 // lobby
@@ -409,6 +423,7 @@ app.get('/games/:id', requireAuth, async (req, res) => {
                 statusCode: 400,
                 title: 'Invalid Game',
                 message: 'Invalid game ID',
+                user: req.session?.user || null,
             });
         }
 
@@ -423,6 +438,7 @@ app.get('/games/:id', requireAuth, async (req, res) => {
                 statusCode: 404,
                 title: 'Game Not Found',
                 message: 'The game room does not exist',
+                user: req.session?.user || null,
             });
         }
 
@@ -449,6 +465,7 @@ app.get('/games/:id', requireAuth, async (req, res) => {
                     statusCode: 403,
                     title: 'Game Full',
                     message: 'This game is full. You cannot join.',
+                    user: req.session?.user || null,
                 });
             }
 
@@ -507,6 +524,7 @@ app.get('/games/:id', requireAuth, async (req, res) => {
             username,
             userId,
             ownerId: roomResult.rows[0].owner_id,
+            gameStatus: roomResult.rows[0].status,
             players: playersResult.rows,
         });
     } catch (err) {
@@ -515,6 +533,7 @@ app.get('/games/:id', requireAuth, async (req, res) => {
             statusCode: 500,
             title: 'Server Error',
             message: 'Failed to load game',
+            user: req.session?.user || null,
         });
     }
 });
@@ -526,20 +545,22 @@ app.get('/game/:id', requireAuth, (req, res) => {
 });
 
 // generic error page route
-app.get('/error', (_req, res) => {
+app.get('/error', (req, res) => {
     res.status(500).render('pages/error', {
         statusCode: 500,
         title: 'Server Error',
         message: 'An error occurred',
+        user: req.session?.user || null,
     });
 });
 
 // 404 handler
-app.use((_req, res) => {
+app.use((req, res) => {
     res.status(404).render('pages/error', {
         statusCode: 404,
         title: 'Page Not Found',
         message: 'Page not found',
+        user: req.session?.user || null,
     });
 });
 

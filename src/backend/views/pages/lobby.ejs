@@ -152,26 +152,15 @@
               <h2 class="text-2xl font-bold text-gray-800 mb-4">Lobby Chat</h2>
               
               <!-- Messages Area -->
-              <div class="flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-4">
-                <% if (typeof messages !== 'undefined' && messages.length > 0) { %>
-                  <% messages.forEach(function(msg) { %>
-                    <div class="bg-white rounded-lg p-3 shadow-sm">
-                      <div class="flex items-center gap-2 mb-1">
-                        <span class="font-semibold text-blue-600 text-sm"><%= msg.username %></span>
-                        <span class="text-xs text-gray-400"><%= new Date(msg.created_at).toLocaleTimeString() %></span>
-                      </div>
-                      <p class="text-gray-700 text-sm"><%= msg.message %></p>
-                    </div>
-                  <% }); %>
-                <% } else { %>
-                  <p class="text-gray-400 text-center text-sm">No messages yet. Start the conversation!</p>
-                <% } %>
+              <div id="messagesContainer" class="flex-1 overflow-y-auto mb-4 space-y-3 bg-gray-50 rounded-lg p-4">
+                <p class="text-gray-400 text-center text-sm">Loading messages...</p>
               </div>
 
               <!-- Message Input -->
-              <form action="/chat/send" method="POST" class="flex gap-2">
+              <form id="chatForm" class="flex gap-2">
                 <input
                   type="text"
+                  id="messageInput"
                   name="message"
                   placeholder="Type a message..."
                   required
@@ -202,6 +191,7 @@
     <script type="module">
       // Lobby client-side functionality
       const io = window.io;
+      const LOBBY_ROOM_ID = 0; // Special ID for lobby chat
 
       // Initialize socket with reconnection options
       const socket = io({
@@ -214,6 +204,8 @@
       // Handle socket connection events
       socket.on('connect', () => {
         console.log('Lobby socket connected:', socket.id);
+        // Join the lobby chat room
+        socket.emit('lobby:join');
       });
 
       socket.on('disconnect', (reason) => {
@@ -227,7 +219,103 @@
       socket.on('reconnect', (attemptNumber) => {
         console.log('Lobby socket reconnected after', attemptNumber, 'attempts');
         loadGames();
+        loadMessages();
       });
+
+      socket.on('lobby:joined', () => {
+        console.log('Joined lobby chat room');
+      });
+
+      // ===== CHAT FUNCTIONALITY =====
+      
+      // Listen for new messages
+      socket.on('room:message:new', (messageData) => {
+        if (messageData.room_id === LOBBY_ROOM_ID) {
+          showMessage(messageData);
+        }
+      });
+
+      // Show a message on screen
+      function showMessage(msg) {
+        const container = document.getElementById('messagesContainer');
+        if (!container) return;
+
+        // Remove "no messages" or "loading" text if it exists
+        const placeholder = container.querySelector('.text-gray-400.text-center');
+        if (placeholder) placeholder.remove();
+
+        // Create message HTML
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'bg-white rounded-lg p-3 shadow-sm';
+
+        const time = new Date(msg.created_at).toLocaleTimeString();
+
+        messageDiv.innerHTML = `
+          <div class="flex items-center gap-2 mb-1">
+            <span class="font-semibold text-blue-600 text-sm">${escapeHtml(msg.username)}</span>
+            <span class="text-xs text-gray-400">${time}</span>
+          </div>
+          <p class="text-gray-700 text-sm">${escapeHtml(msg.content)}</p>
+        `;
+
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight; // Scroll to bottom
+      }
+
+      // Escape HTML to prevent XSS
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Load messages from server
+      async function loadMessages() {
+        try {
+          const response = await fetch(`/api/rooms/${LOBBY_ROOM_ID}/messages`);
+          const data = await response.json();
+
+          const container = document.getElementById('messagesContainer');
+          if (!container) return;
+
+          if (data.success && data.messages && data.messages.length > 0) {
+            container.innerHTML = '';
+            data.messages.forEach((msg) => showMessage(msg));
+          } else {
+            container.innerHTML = '<p class="text-gray-400 text-center text-sm">No messages yet. Start the conversation!</p>';
+          }
+        } catch (error) {
+          console.error('Failed to load messages:', error);
+          const container = document.getElementById('messagesContainer');
+          if (container) {
+            container.innerHTML = '<p class="text-gray-400 text-center text-sm">Failed to load messages</p>';
+          }
+        }
+      }
+
+      // Send message
+      async function sendMessage(content) {
+        try {
+          const response = await fetch(`/api/rooms/${LOBBY_ROOM_ID}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content })
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            alert(data.error || 'Failed to send message');
+            return false;
+          }
+          return true;
+        } catch (error) {
+          console.error('Error sending message:', error);
+          alert('Error sending message');
+          return false;
+        }
+      }
+
+      // ===== GAMES FUNCTIONALITY =====
 
       // Fetch and display games
       async function loadGames() {
@@ -252,7 +340,7 @@
           <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all duration-300">
             <div class="flex items-center justify-between">
               <div class="flex-1">
-                <h3 class="text-lg font-semibold text-gray-800">${game.name}</h3>
+                <h3 class="text-lg font-semibold text-gray-800">${escapeHtml(game.name)}</h3>
                 <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
                   <span class="flex items-center gap-1">
                     <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -267,14 +355,14 @@
               </div>
               ${game.status === 'waiting' ? `
                 <button
-                  onclick="location.href='/games/${game.id}'"
+                  onclick="joinGame(${game.id})"
                   class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
                 >
                   Join
                 </button>
               ` : `
                 <button
-                  onclick="location.href='/games/${game.id}'"
+                  onclick="joinGame(${game.id})"
                   class="bg-gray-400 hover:bg-gray-500 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
                 >
                   Spectate
@@ -299,9 +387,34 @@
         loadGames();
       });
 
-      // Load games on page load
+      // Initialize on page load
       document.addEventListener('DOMContentLoaded', () => {
         loadGames();
+        loadMessages();
+
+        // Set up chat form
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+
+        if (chatForm && messageInput) {
+          chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            messageInput.disabled = true;
+            
+            const success = await sendMessage(message);
+            
+            if (success) {
+              messageInput.value = '';
+            }
+            
+            messageInput.disabled = false;
+            messageInput.focus();
+          });
+        }
       });
     </script>
     <script>
