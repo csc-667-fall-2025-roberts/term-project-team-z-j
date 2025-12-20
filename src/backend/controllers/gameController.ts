@@ -154,6 +154,17 @@ export async function joinGame(req: Request, res: Response) {
             return res.status(400).json({ error: 'Invalid game ID' });
         }
 
+        // Check if already in room
+        const existingPlayer = await pool.query(
+            `SELECT user_id FROM room_players WHERE user_id = $1 AND room_id = $2`,
+            [userId, gameId]
+        );
+
+        if ((existingPlayer.rowCount ?? 0) > 0) {
+            // User is already in the game, just return success
+            return res.json({ success: true, alreadyJoined: true });
+        }
+
         // Check if room exists and has space
         const roomResult = await pool.query(
             `SELECT 
@@ -180,16 +191,6 @@ export async function joinGame(req: Request, res: Response) {
 
         if (room.player_count >= room.max_players) {
             return res.status(400).json({ error: 'Game is full' });
-        }
-
-        // Check if already in room
-        const existingPlayer = await pool.query(
-            `SELECT user_id FROM room_players WHERE user_id = $1 AND room_id = $2`,
-            [userId, gameId]
-        );
-
-        if ((existingPlayer.rowCount ?? 0) > 0) {
-            return res.status(400).json({ error: 'Already in this game' });
         }
 
         // Find next available position
@@ -230,5 +231,151 @@ export async function joinGame(req: Request, res: Response) {
     } catch (error) {
         console.error('[joinGame] error:', error);
         return res.status(500).json({ error: 'Failed to join game' });
+    }
+}
+
+// Start a game (owner only)
+export async function startGame(req: Request, res: Response) {
+    try {
+        const gameId = parseInt(req.params.id);
+        const userId = req.session.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        if (isNaN(gameId)) {
+            return res.status(400).json({ error: 'Invalid game ID' });
+        }
+
+        // Check if user is the owner
+        const roomResult = await pool.query(
+            `SELECT owner_id, status FROM game_room WHERE id = $1`,
+            [gameId]
+        );
+
+        if ((roomResult.rowCount ?? 0) === 0) {
+            return res.status(404).json({ error: 'Game not found' });
+        }
+
+        const room = roomResult.rows[0];
+
+        if (room.owner_id !== userId) {
+            return res.status(403).json({ error: 'Only the owner can start the game' });
+        }
+
+        if (room.status !== 'waiting') {
+            return res.status(400).json({ error: 'Game already started' });
+        }
+
+        // Check if there are at least 2 players
+        const playerCountResult = await pool.query(
+            `SELECT COUNT(*) as count FROM room_players WHERE room_id = $1`,
+            [gameId]
+        );
+
+        const playerCount = parseInt(playerCountResult.rows[0].count);
+
+        if (playerCount < 2) {
+            return res.status(400).json({ error: 'Need at least 2 players to start' });
+        }
+
+        // Update game status
+        await pool.query(
+            `UPDATE game_room SET status = 'in_progress' WHERE id = $1`,
+            [gameId]
+        );
+
+        // Broadcast game started
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`room:${gameId}`).emit('game:started', {
+                gameId,
+            });
+        }
+
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('[startGame] error:', error);
+        return res.status(500).json({ error: 'Failed to start game' });
+    }
+}
+
+// Leave a game
+export async function leaveGame(req: Request, res: Response) {
+    try {
+        const gameId = parseInt(req.params.id);
+        const userId = req.session.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Not authenticated' });
+        }
+
+        if (isNaN(gameId)) {
+            return res.status(400).json({ error: 'Invalid game ID' });
+        }
+
+        // Check if user is in the game
+        const playerResult = await pool.query(
+            `SELECT user_id FROM room_players WHERE user_id = $1 AND room_id = $2`,
+            [userId, gameId]
+        );
+
+        if ((playerResult.rowCount ?? 0) === 0) {
+            return res.status(400).json({ error: 'You are not in this game' });
+        }
+
+        // Remove player from game
+        await pool.query(
+            `DELETE FROM room_players WHERE user_id = $1 AND room_id = $2`,
+            [userId, gameId]
+        );
+
+        // Check if game is now empty
+        const remainingPlayersResult = await pool.query(
+            `SELECT COUNT(*) as count FROM room_players WHERE room_id = $1`,
+            [gameId]
+        );
+
+        const remainingPlayers = parseInt(remainingPlayersResult.rows[0].count);
+
+        if (remainingPlayers === 0) {
+            // Delete the game if no players left
+            await pool.query(`DELETE FROM game_room WHERE id = $1`, [gameId]);
+        } else {
+            // Check if the owner left
+            const roomResult = await pool.query(
+                `SELECT owner_id FROM game_room WHERE id = $1`,
+                [gameId]
+            );
+
+            if ((roomResult.rowCount ?? 0) > 0 && roomResult.rows[0].owner_id === userId) {
+                // Transfer ownership to the first remaining player
+                const newOwnerResult = await pool.query(
+                    `SELECT user_id FROM room_players WHERE room_id = $1 ORDER BY position LIMIT 1`,
+                    [gameId]
+                );
+
+                if ((newOwnerResult.rowCount ?? 0) > 0) {
+                    await pool.query(
+                        `UPDATE game_room SET owner_id = $1 WHERE id = $2`,
+                        [newOwnerResult.rows[0].user_id, gameId]
+                    );
+                }
+            }
+        }
+
+        // Broadcast player left
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`room:${gameId}`).emit('room:player:left', {
+                user_id: userId,
+            });
+        }
+
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('[leaveGame] error:', error);
+        return res.status(500).json({ error: 'Failed to leave game' });
     }
 }

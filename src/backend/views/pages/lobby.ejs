@@ -40,7 +40,7 @@
             <!-- Create Game Section -->
             <div class="bg-white rounded-xl shadow-lg p-6">
               <h2 class="text-2xl font-bold text-gray-800 mb-4">Create New Game</h2>
-               <form action="/games" method="POST" class="space-y-4">
+               <form action="/games/create" method="POST" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label for="gameName" class="block text-sm font-medium text-gray-700 mb-2">
@@ -106,7 +106,7 @@
                         </div>
                         <% if (game.status === 'waiting') { %>
                           <button
-                            onclick="location.href='/games/<%= game.id %>'"
+                            onclick="joinGame(<%= game.id %>)"
                             class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
                           >
                             Join
@@ -188,5 +188,28 @@
       import '/main.ts';
     </script>
     <script type="module" src="/lobby.ts"></script>
+    <script>
+      async function joinGame(gameId) {
+        try {
+          const response = await fetch(`/api/games/${gameId}/join`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            // Successfully joined, redirect to game
+            window.location.href = `/games/${gameId}`;
+          } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to join game');
+          }
+        } catch (error) {
+          console.error('Error joining game:', error);
+          alert('Failed to join game');
+        }
+      }
+    </script>
   </body>
 </html>

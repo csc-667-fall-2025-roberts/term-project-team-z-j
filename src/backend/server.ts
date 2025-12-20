@@ -8,7 +8,7 @@ import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import ViteExpress from 'vite-express';
 
-import { createGame, getGameDetails, getGames, joinGame } from './controllers/gameController';
+import { createGame, getGameDetails, getGames, joinGame, leaveGame, startGame } from './controllers/gameController';
 import { getMessages, sendMessage } from './controllers/messageController';
 import pool, { testConnection } from './database';
 
@@ -75,8 +75,8 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 app.post('/api/rooms/:roomId/messages', sendMessage);
 app.get('/api/rooms/:roomId/messages', getMessages);
 app.post('/chat/send', requireAuth, async (req, res) => {
-  // TEMP: lobby chat placeholder
-  res.redirect('/lobby');
+    // TEMP: lobby chat placeholder
+    res.redirect('/lobby');
 });
 
 
@@ -208,6 +208,12 @@ app.post('/games/create', requireAuth, createGame);
 // Join game (API)
 app.post('/api/games/:id/join', requireAuth, joinGame);
 
+// Start game (API)
+app.post('/api/games/:id/start', requireAuth, startGame);
+
+// Leave game (API)
+app.post('/api/games/:id/leave', requireAuth, leaveGame);
+
 // ---------- PAGE ROUTES ----------
 
 // lobby
@@ -248,9 +254,118 @@ app.get('/lobby', requireAuth, async (req, res) => {
 
 // game page
 app.get('/games/:id', requireAuth, async (req, res) => {
-    const gameId = req.params.id;
-    const username = req.session.user?.username;
-    res.render('pages/game', { gameId, username });
+    try {
+        const gameId = parseInt(req.params.id);
+        const userId = req.session.user?.id;
+        const username = req.session.user?.username;
+
+        if (isNaN(gameId)) {
+            return res.status(400).render('pages/error', {
+                statusCode: 400,
+                title: 'Invalid Game',
+                message: 'Invalid game ID',
+            });
+        }
+
+        // Get game room details
+        const roomResult = await pool.query(
+            `SELECT id, name, max_players, status, owner_id FROM game_room WHERE id = $1`,
+            [gameId]
+        );
+
+        if ((roomResult.rowCount ?? 0) === 0) {
+            return res.status(404).render('pages/error', {
+                statusCode: 404,
+                title: 'Game Not Found',
+                message: 'The game room does not exist',
+            });
+        }
+
+        // Check if user is in the game
+        const userInGame = await pool.query(
+            `SELECT user_id FROM room_players WHERE user_id = $1 AND room_id = $2`,
+            [userId, gameId]
+        );
+
+        // If user is not in the game, try to add them automatically
+        if ((userInGame.rowCount ?? 0) === 0) {
+            const room = roomResult.rows[0];
+
+            // Check if game is full
+            const playerCountResult = await pool.query(
+                `SELECT COUNT(*) as count FROM room_players WHERE room_id = $1`,
+                [gameId]
+            );
+
+            const playerCount = parseInt(playerCountResult.rows[0].count);
+
+            if (playerCount >= room.max_players) {
+                return res.status(403).render('pages/error', {
+                    statusCode: 403,
+                    title: 'Game Full',
+                    message: 'This game is full. You cannot join.',
+                });
+            }
+
+            // Find next available position
+            const positionsResult = await pool.query(
+                `SELECT position FROM room_players WHERE room_id = $1 ORDER BY position`,
+                [gameId]
+            );
+
+            let nextPosition = 0;
+            const takenPositions = positionsResult.rows.map((r) => r.position);
+            while (takenPositions.includes(nextPosition)) {
+                nextPosition++;
+            }
+
+            // Add user to the game
+            await pool.query(
+                `INSERT INTO room_players (user_id, room_id, position, is_ready)
+                VALUES ($1, $2, $3, false)`,
+                [userId, gameId, nextPosition]
+            );
+
+            // Broadcast player joined
+            const io = req.app.get('io');
+            if (io) {
+                io.to(`room:${gameId}`).emit('room:player:joined', {
+                    user_id: userId,
+                    username: username,
+                    position: nextPosition,
+                });
+            }
+        }
+
+        // Get players in the room
+        const playersResult = await pool.query(
+            `SELECT 
+                rp.user_id,
+                rp.position,
+                rp.is_ready,
+                u.username
+            FROM room_players rp
+            JOIN users u ON rp.user_id = u.id
+            WHERE rp.room_id = $1
+            ORDER BY rp.position`,
+            [gameId]
+        );
+
+        res.render('pages/game', {
+            gameId,
+            username,
+            userId,
+            ownerId: roomResult.rows[0].owner_id,
+            players: playersResult.rows,
+        });
+    } catch (err) {
+        console.error('[games/:id] error:', err);
+        res.status(500).render('pages/error', {
+            statusCode: 500,
+            title: 'Server Error',
+            message: 'Failed to load game',
+        });
+    }
 });
 
 // optional alias

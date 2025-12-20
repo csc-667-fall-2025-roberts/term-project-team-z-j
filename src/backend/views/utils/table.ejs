@@ -21,73 +21,89 @@
       <!-- Inner rim shadow for depth -->
       <div class="absolute inset-0" style="border-radius: 165px; box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.4);"></div>
 
-      <!-- Player 1 (Bottom - Current Player with visible cards) -->
-      <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-20 flex flex-col items-center gap-2">
-        <!-- Cards -->
-        <div class="flex gap-2 mb-1">
-          <img src="/cards/ace_of_spades.svg" alt="Ace of Spades" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
-          <img src="/cards/king_of_hearts.svg" alt="King of Hearts" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 3px solid #fbbf24; box-shadow: 0 6px 16px rgba(0,0,0,0.5), 0 0 16px rgba(251, 191, 36, 0.3);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player1" alt="Player 1" class="w-9 h-9 rounded-full border-2 border-white shadow-lg" />
-          <div class="text-left">
-            <div class="text-white font-bold text-xs tracking-wide">You</div>
-            <div class="text-green-400 font-bold text-sm">$1,500</div>
-          </div>
-        </div>
-      </div>
+      <%
+        // Define player positions around the table (8 positions max)
+        const allPositions = [
+          'bottom-0 left-1/2 transform -translate-x-1/2 translate-y-20',  // Position 0 - Bottom
+          'left-0 top-1/2 transform -translate-y-1/2 -translate-x-16',   // Position 1 - Left
+          'top-0 left-1/2 transform -translate-x-1/2 -translate-y-16',   // Position 2 - Top
+          'right-0 top-1/2 transform -translate-y-1/2 translate-x-16',   // Position 3 - Right
+          'left-[15%] top-[15%] transform -translate-x-12 -translate-y-12', // Position 4 - Top-Left
+          'right-[15%] top-[15%] transform translate-x-12 -translate-y-12', // Position 5 - Top-Right
+          'left-[15%] bottom-[15%] transform -translate-x-12 translate-y-12', // Position 6 - Bottom-Left
+          'right-[15%] bottom-[15%] transform translate-x-12 translate-y-12', // Position 7 - Bottom-Right
+        ];
 
-      <!-- Player 2 (Left) -->
-      <div class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-16 flex flex-col items-center gap-1.5">
-        <!-- Cards (face down) -->
-        <div class="flex gap-1 mb-0.5">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg" style="border: 2px solid #4b5563; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player2" alt="Player 2" class="w-8 h-8 rounded-full border-2 border-white shadow-md" />
-          <div class="text-left">
-            <div class="text-white font-bold text-xs">varan307</div>
-            <div class="text-green-400 font-bold text-xs">$2,100</div>
-          </div>
-        </div>
-      </div>
+        // Sort players by position
+        const sortedPlayers = [...players].sort((a, b) => a.position - b.position);
+        
+        // Find current user in sorted list
+        const currentUserIndex = sortedPlayers.findIndex(p => p.user_id === userId);
+        
+        // Reorder so current user is first
+        const reorderedPlayers = [];
+        for (let i = 0; i < sortedPlayers.length; i++) {
+          const index = (currentUserIndex + i) % sortedPlayers.length;
+          reorderedPlayers.push(sortedPlayers[index]);
+        }
 
-      <!-- Player 3 (Top) -->
-      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-16 flex flex-col items-center gap-1.5">
-        <!-- Cards (face down) -->
-        <div class="flex gap-1 mb-0.5">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg" style="border: 2px solid #4b5563; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player3" alt="Player 3" class="w-8 h-8 rounded-full border-2 border-white shadow-md" />
-          <div class="text-left">
-            <div class="text-white font-bold text-xs">PokerPro88</div>
-            <div class="text-green-400 font-bold text-xs">$3,250</div>
-          </div>
-        </div>
-      </div>
+        // Map players to visual positions based on player count
+        // For 2 players: positions 0 (bottom) and 2 (top)
+        // For 3 players: positions 0 (bottom), 1 (left), 3 (right)
+        // For 4 players: positions 0, 1, 2, 3
+        // For 5+ players: use all positions
+        const visualPositionMap = {
+          2: [0, 2],           // Bottom, Top
+          3: [0, 1, 3],        // Bottom, Left, Right
+          4: [0, 1, 2, 3],     // Bottom, Left, Top, Right
+          5: [0, 1, 2, 3, 6],  // Add Bottom-Left
+          6: [0, 1, 2, 3, 6, 7], // Add Bottom-Right
+          7: [0, 1, 4, 2, 5, 3, 6], // Add Top-Left
+          8: [0, 1, 4, 2, 5, 3, 6, 7] // All positions
+        };
 
-      <!-- Player 4 (Right) -->
-      <div class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-16 flex flex-col items-center gap-1.5">
-        <!-- Cards (face down) -->
-        <div class="flex gap-1 mb-0.5">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg" style="border: 2px solid #4b5563; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player4" alt="Player 4" class="w-8 h-8 rounded-full border-2 border-white shadow-md" />
-          <div class="text-left">
-            <div class="text-white font-bold text-xs">AllInAnnie</div>
-            <div class="text-green-400 font-bold text-xs">$1,875</div>
+        const playerCount = reorderedPlayers.length;
+        const positionIndices = visualPositionMap[playerCount] || visualPositionMap[8];
+      %>
+
+      <% reorderedPlayers.forEach((player, index) => { 
+        const positionIndex = positionIndices[index];
+        const isCurrentUser = player.user_id === userId;
+      %>
+        <!-- Player <%= index %> (<%= player.username %>) at visual position <%= positionIndex %> -->
+        <div data-player="<%= player.user_id %>" class="absolute <%= allPositions[positionIndex] %> flex flex-col items-center <%= isCurrentUser ? 'gap-2' : 'gap-1.5' %>">
+          <!-- Cards -->
+          <div class="flex <%= isCurrentUser ? 'gap-2 mb-1' : 'gap-1 mb-0.5' %>">
+            <% if (isCurrentUser) { %>
+              <!-- Current user sees their cards (placeholder for now) -->
+              <img src="/cards/ace_of_spades.svg" alt="Card" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
+              <img src="/cards/king_of_hearts.svg" alt="Card" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
+            <% } else { %>
+              <!-- Other players show card backs -->
+              <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
+              <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
+            <% } %>
           </div>
+          <!-- Player Info -->
+          <% if (isCurrentUser) { %>
+            <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 3px solid #fbbf24; box-shadow: 0 6px 16px rgba(0,0,0,0.5), 0 0 16px rgba(251, 191, 36, 0.3);">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=<%= player.username %>" alt="<%= player.username %>" class="w-9 h-9 rounded-full border-2 border-white shadow-lg" />
+              <div class="text-left">
+                <div class="text-white font-bold text-xs tracking-wide">You</div>
+                <div class="text-green-400 font-bold text-sm">$1,500</div>
+              </div>
+            </div>
+          <% } else { %>
+            <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg" style="border: 2px solid #4b5563; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=<%= player.username %>" alt="<%= player.username %>" class="w-8 h-8 rounded-full border-2 border-white shadow-md" />
+              <div class="text-left">
+                <div class="text-white font-bold text-xs"><%= player.username %></div>
+                <div class="text-green-400 font-bold text-xs">$1,500</div>
+              </div>
+            </div>
+          <% } %>
         </div>
-      </div>
+      <% }); %>
 
       <!-- Community Cards (Center) -->
       <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-12 flex gap-1.5" id="communityCards">
