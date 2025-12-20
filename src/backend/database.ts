@@ -14,6 +14,8 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 5432,
   database: process.env.DB_NAME,
+  // Required for Render's managed PostgreSQL
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 // Simple helper function to run queries

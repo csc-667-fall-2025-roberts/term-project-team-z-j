@@ -4,8 +4,8 @@
   "main": "dist/backend/server.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/backend/server.ts",
-    "build": "tsc",
-    "start": "node dist/backend/server.ts",
+    "build": "tsc && vite build",
+    "start": "node dist/backend/server.js",
     "migrate:up": "NODE_OPTIONS='--import tsx' node-pg-migrate up",
     "migrate:down": "NODE_OPTIONS='--import tsx' node-pg-migrate down"
   },
