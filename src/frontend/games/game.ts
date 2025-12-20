@@ -159,22 +159,35 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Raise action
-    raiseBtn?.addEventListener('click', () => {
-        const amount = 50; // Default raise amount
-        gameState.pot += amount;
-        gameState.playerChips -= amount;
-        updatePot();
-        console.log(`Player raised ${amount}`);
-        alert(`You raised ${amount}!`);
-    });
-
-    // Update pot display
-    function updatePot() {
-        const potElement = document.getElementById('potAmount');
-        if (potElement) {
-            potElement.textContent = gameState.pot.toString();
-        }
+    raiseBtn?.addEventListener('click', async () => {
+    if (!gameState.handId) {
+        alert('No active hand');
+        return;
     }
+
+    const betSlider = document.getElementById('betSlider') as HTMLInputElement;
+    const amount = betSlider ? parseInt(betSlider.value) : 50;
+
+    try {
+        const response = await fetch(`/api/hands/${gameState.handId}/action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action_type: 'raise',
+                amount: amount
+            })
+        });
+
+        if (response.ok) {
+            console.log(`Player raised ${amount}`);
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Raise failed');
+        }
+    } catch (error) {
+        console.error('Raise failed:', error);
+    }
+    }); 
 
     // Socket event listeners
 
