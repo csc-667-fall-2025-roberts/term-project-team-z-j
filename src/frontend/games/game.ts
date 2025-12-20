@@ -6,13 +6,15 @@ interface GameState {
     currentBet: number;
     playerChips: number;
     gameId: string | null;
+    handId: number | null;
 }
 
 const gameState: GameState = {
     pot: 10,
     currentBet: 0,
     playerChips: 998,
-    gameId: null
+    gameId: null,
+    handId: null
 };
 
 const socket = io();
@@ -101,15 +103,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fold action
-    foldBtn?.addEventListener('click', () => {
-        console.log('Player folded');
-        alert('You folded!');
+    foldBtn?.addEventListener('click', async () => {
+        if (!gameState.handId) {
+            alert('No active hand');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/hands/${gameState.handId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action_type: 'fold',
+                    amount: 0
+                })
+            });
+
+            if (response.ok) {
+                console.log('Player folded');
+            } else {
+                const data = await response.json();
+                alert(data.error || 'Fold failed');
+            }
+        } catch (error) {
+            console.error('Fold failed:', error);
+        }
     });
 
     // Check action
-    checkBtn?.addEventListener('click', () => {
-        console.log('Player checked');
-        alert('You checked!');
+    checkBtn?.addEventListener('click', async () => {
+    if (!gameState.handId) {
+        alert('No active hand');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/hands/${gameState.handId}/action`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action_type: 'check',
+                amount: 0
+            })
+        });
+
+        if (response.ok) {
+            console.log('Player checked');
+        } else {
+            const data = await response.json();
+            alert(data.error || 'Check failed');
+        }
+    } catch (error) {
+        console.error('Check failed:', error);
+    }
     });
 
     // Raise action
@@ -131,9 +177,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Socket event listeners
+
+
     socket.on('room:player:joined', (data) => {
         console.log('Player joined:', data);
         // Update UI to show new player
+    });
+
+    // Save hand ID when hand starts
+    socket.on('game:hand:started', (data) => {
+        gameState.handId = data.hand_id;
+        console.log('Hand started, ID:', data.hand_id);
     });
 
     socket.on('room:message:new', (data) => {
