@@ -142,6 +142,9 @@
   if (chatToggle && chatPanel) {
     chatToggle.addEventListener('click', () => {
       chatPanel.classList.toggle('hidden');
+      if (!chatPanel.classList.contains('hidden')) {
+        loadMessages();
+      }
     });
   }
   
