@@ -316,10 +316,12 @@ export async function startGame(req: Request, res: Response) {
         );
 
         const players = playersResult.rows.map((row: any) => ({
-            userId: row.user_id,
+            userId: Number(row.user_id),
             username: row.username,
-            position: row.position
+            position: Number(row.position)
         }));
+
+        console.log('[startGame] Players for game engine:', players);
 
         // Get Socket.io instance
         const io = req.app.get('io');

@@ -255,12 +255,16 @@
         // Cards dealt event (private to each player)
         socket.on('game:cards:dealt', (data) => {
           console.log('[Socket] ===== CARDS DEALT =====', data);
+          console.log('[Socket] Comparing data.userId:', data.userId, '(type:', typeof data.userId, ') with userId:', userId, '(type:', typeof userId, ')');
           
-          // Only update if these are our cards
-          if (data.userId === userId && data.holeCards) {
+          // Only update if these are our cards (compare as numbers to handle type mismatch)
+          if (Number(data.userId) === Number(userId) && data.holeCards) {
+            console.log('[Socket] Cards are for current user, updating...');
             gameState.holeCards = data.holeCards;
             updateHoleCards(data.holeCards);
             showNotification('Cards dealt!', 'success');
+          } else {
+            console.log('[Socket] Cards are for another user, skipping');
           }
         });
         
@@ -268,7 +272,7 @@
         socket.on('game:turn:started', (data) => {
           console.log('[Socket] ===== TURN STARTED =====', data);
           
-          const isMyTurn = data.userId === userId;
+          const isMyTurn = Number(data.userId) === Number(userId);
           gameState.isMyTurn = isMyTurn;
           
           updateActionButtons(isMyTurn);
@@ -466,6 +470,7 @@
           console.log('[updateHoleCards] Updating cards for userId:', userId, 'cards:', cards);
           
           // Find current user's card container using the specific class
+          // Use string conversion for the attribute selector
           const currentUserElement = document.querySelector(`[data-player="${userId}"]`);
           if (!currentUserElement) {
             console.error('[updateHoleCards] Current user element not found for userId:', userId);
@@ -474,6 +479,8 @@
             console.log('[updateHoleCards] Available player elements:', Array.from(allPlayers).map(el => el.getAttribute('data-player')));
             return;
           }
+          
+          console.log('[updateHoleCards] Found player element:', currentUserElement);
           
           // Find the card container using the specific class
           const cardContainer = currentUserElement.querySelector('.player-cards');

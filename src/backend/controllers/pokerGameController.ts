@@ -42,13 +42,31 @@ export function registerPokerHandlers(_io: Server, socket: Socket, userId: numbe
         return;
     }
 
+    // Ensure userId is a number
+    const numericUserId = Number(userId);
+
+    // Log game state for debugging
+    const gameState = game.getGameState();
+    const playerIds = Array.from(gameState.players.keys());
+    console.log(`[pokerGameController] Registering handlers for userId: ${numericUserId} (type: ${typeof numericUserId})`);
+    console.log(`[pokerGameController] Players in game:`, playerIds.map(id => `${id} (type: ${typeof id})`));
+    console.log(`[pokerGameController] Player exists in game: ${gameState.players.has(numericUserId)}`);
+
+    // Remove any existing handlers to prevent duplicates
+    socket.removeAllListeners('game:action:fold');
+    socket.removeAllListeners('game:action:check');
+    socket.removeAllListeners('game:action:call');
+    socket.removeAllListeners('game:action:raise');
+    socket.removeAllListeners('game:action:allin');
+
     /**
      * Handle fold action
      * Requirement 2.2: Mark player as inactive for remainder of hand
      */
     socket.on('game:action:fold', async () => {
+        console.log(`[game:action:fold] User ${numericUserId} attempting to fold`);
         try {
-            await game.handlePlayerAction(userId, { type: 'fold' });
+            await game.handlePlayerAction(numericUserId, { type: 'fold' });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error('[game:action:fold] error:', errorMessage);
@@ -65,8 +83,9 @@ export function registerPokerHandlers(_io: Server, socket: Socket, userId: numbe
      * Requirement 2.3: Advance to next player without changing pot
      */
     socket.on('game:action:check', async () => {
+        console.log(`[game:action:check] User ${numericUserId} attempting to check`);
         try {
-            await game.handlePlayerAction(userId, { type: 'check' });
+            await game.handlePlayerAction(numericUserId, { type: 'check' });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error('[game:action:check] error:', errorMessage);
@@ -83,8 +102,9 @@ export function registerPokerHandlers(_io: Server, socket: Socket, userId: numbe
      * Requirement 2.4: Add call amount to pot and deduct from player's stack
      */
     socket.on('game:action:call', async () => {
+        console.log(`[game:action:call] User ${numericUserId} attempting to call`);
         try {
-            await game.handlePlayerAction(userId, { type: 'call' });
+            await game.handlePlayerAction(numericUserId, { type: 'call' });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error('[game:action:call] error:', errorMessage);
@@ -101,6 +121,7 @@ export function registerPokerHandlers(_io: Server, socket: Socket, userId: numbe
      * Requirement 2.5: Validate raise amount is at least minimum raise
      */
     socket.on('game:action:raise', async (data: { amount: number }) => {
+        console.log(`[game:action:raise] User ${numericUserId} attempting to raise with data:`, data);
         try {
             // Validate amount is provided
             if (!data || typeof data.amount !== 'number') {
@@ -112,7 +133,7 @@ export function registerPokerHandlers(_io: Server, socket: Socket, userId: numbe
                 throw new Error('Raise amount must be positive');
             }
 
-            await game.handlePlayerAction(userId, {
+            await game.handlePlayerAction(numericUserId, {
                 type: 'raise',
                 amount: data.amount
             });
@@ -132,8 +153,9 @@ export function registerPokerHandlers(_io: Server, socket: Socket, userId: numbe
      * Requirement 2.6: Move all remaining chips from player's stack to pot
      */
     socket.on('game:action:allin', async () => {
+        console.log(`[game:action:allin] User ${numericUserId} attempting to go all-in`);
         try {
-            await game.handlePlayerAction(userId, { type: 'all_in' });
+            await game.handlePlayerAction(numericUserId, { type: 'all_in' });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             console.error('[game:action:allin] error:', errorMessage);
@@ -145,7 +167,7 @@ export function registerPokerHandlers(_io: Server, socket: Socket, userId: numbe
         }
     });
 
-    console.log(`[pokerGameController] Registered poker handlers for user ${userId} in room ${roomId}`);
+    console.log(`[pokerGameController] Registered poker handlers for user ${numericUserId} in room ${roomId}`);
 }
 
 /**

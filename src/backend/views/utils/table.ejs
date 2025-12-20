@@ -71,11 +71,6 @@
         const positionIndices = visualPositionMap[playerCount] || visualPositionMap[8];
       %>
       
-      <!-- Debug info (hidden) -->
-      <script>
-        console.log('[table.ejs] Rendered with userId:', <%= userId %>, 'players:', <%= JSON.stringify(sortedPlayers.map(p => ({ user_id: p.user_id, username: p.username }))) %>);
-      </script>
-
       <% reorderedPlayers.forEach((player, index) => { 
         const positionIndex = positionIndices[index];
         const isCurrentUser = player.user_id === userId;

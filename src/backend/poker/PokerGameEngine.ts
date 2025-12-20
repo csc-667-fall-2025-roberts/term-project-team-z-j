@@ -60,10 +60,12 @@ export class PokerGameEngine {
         // Initialize player states with starting stacks
         const playerMap = new Map<number, PlayerState>();
         for (const player of players) {
-            playerMap.set(player.userId, {
-                userId: player.userId,
+            const numericUserId = Number(player.userId);
+            console.log(`[PokerGameEngine] Adding player ${player.username} with userId ${numericUserId} (type: ${typeof numericUserId})`);
+            playerMap.set(numericUserId, {
+                userId: numericUserId,
                 username: player.username,
-                position: player.position,
+                position: Number(player.position),
                 stack: this.STARTING_STACK, // Requirement 7.1: 1500 chips starting stack
                 currentBet: 0,
                 holeCards: null,
@@ -72,6 +74,8 @@ export class PokerGameEngine {
                 hasActed: false,
             });
         }
+
+        console.log(`[PokerGameEngine] Player map keys:`, Array.from(playerMap.keys()));
 
         // Get sorted list of actual player positions from database
         const sortedPositions = players.map(p => p.position).sort((a, b) => a - b);
@@ -271,18 +275,26 @@ export class PokerGameEngine {
      * Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7
      */
     async handlePlayerAction(userId: number, action: PlayerAction): Promise<void> {
+        // Ensure userId is a number
+        const numericUserId = Number(userId);
+
+        console.log(`[PokerGameEngine] handlePlayerAction called with userId: ${numericUserId} (type: ${typeof numericUserId}), action:`, action);
+        console.log(`[PokerGameEngine] Current player map keys:`, Array.from(this.gameState.players.keys()));
+        console.log(`[PokerGameEngine] Player exists check: ${this.gameState.players.has(numericUserId)}`);
+
         if (!this.gameState.isHandActive) {
             throw new Error('No active hand');
         }
 
-        const player = this.gameState.players.get(userId);
+        const player = this.gameState.players.get(numericUserId);
         if (!player) {
+            console.error(`[PokerGameEngine] Player not found! userId: ${numericUserId}, available keys:`, Array.from(this.gameState.players.keys()));
             throw new Error('Player not found');
         }
 
         // Validate it's the player's turn (Requirement 2.1)
         const currentPlayer = this.getPlayerAtPosition(this.gameState.currentPlayerPosition);
-        if (!currentPlayer || currentPlayer.userId !== userId) {
+        if (!currentPlayer || currentPlayer.userId !== numericUserId) {
             throw new Error('Not your turn');
         }
 

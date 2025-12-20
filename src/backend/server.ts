@@ -103,18 +103,26 @@ io.on('connection', (socket) => {
             return;
         }
 
+        // Ensure userId is a number
+        const numericUserId = Number(data.userId);
+
+        if (isNaN(numericUserId)) {
+            console.error('[socket] Invalid userId - not a number:', data.userId);
+            return;
+        }
+
         // Clean up any existing mapping for this user
-        const existingSocketId = userToSocket.get(data.userId);
+        const existingSocketId = userToSocket.get(numericUserId);
         if (existingSocketId && existingSocketId !== socket.id) {
             socketToUser.delete(existingSocketId);
-            console.log(`[socket] Cleaned up old socket ${existingSocketId} for user ${data.userId}`);
+            console.log(`[socket] Cleaned up old socket ${existingSocketId} for user ${numericUserId}`);
         }
 
         // Map socket to user
-        socketToUser.set(socket.id, data.userId);
-        userToSocket.set(data.userId, socket.id);
+        socketToUser.set(socket.id, numericUserId);
+        userToSocket.set(numericUserId, socket.id);
 
-        console.log(`[socket] User ${data.userId} identified on socket ${socket.id}`);
+        console.log(`[socket] User ${numericUserId} (type: ${typeof numericUserId}) identified on socket ${socket.id}`);
     });
 
     socket.on('room:join', (data: any) => {
@@ -126,7 +134,13 @@ io.on('connection', (socket) => {
             return;
         }
 
-        const roomName = `room:${data.roomId}`;
+        const numericRoomId = Number(data.roomId);
+        if (isNaN(numericRoomId)) {
+            console.error('[socket] Invalid roomId - not a number:', data.roomId);
+            return;
+        }
+
+        const roomName = `room:${numericRoomId}`;
         socket.join(roomName);
         console.log(`[socket] ${socket.id} joined ${roomName}`);
 
@@ -138,20 +152,22 @@ io.on('connection', (socket) => {
             return;
         }
 
+        console.log(`[socket] User ${userId} (type: ${typeof userId}) joining room ${numericRoomId}`);
+
         // Check if there's an active poker game for this room
-        const game = getGame(data.roomId);
+        const game = getGame(numericRoomId);
 
         if (game) {
             // Register poker event handlers for this socket
-            registerPokerHandlers(io, socket, userId, data.roomId);
-            console.log(`[socket] Registered poker handlers for user ${userId} in room ${data.roomId}`);
+            registerPokerHandlers(io, socket, userId, numericRoomId);
+            console.log(`[socket] Registered poker handlers for user ${userId} in room ${numericRoomId}`);
         } else {
-            console.log(`[socket] No active game found for room ${data.roomId} - handlers will be registered when game starts`);
+            console.log(`[socket] No active game found for room ${numericRoomId} - handlers will be registered when game starts`);
         }
 
         // Always emit confirmation
         socket.emit('room:joined', {
-            roomId: data.roomId,
+            roomId: numericRoomId,
             userId: userId
         });
     });
@@ -166,16 +182,26 @@ io.on('connection', (socket) => {
             return;
         }
 
+        const numericRoomId = Number(data.roomId);
+        if (isNaN(numericRoomId)) {
+            console.error('[socket] Invalid roomId - not a number:', data.roomId);
+            return;
+        }
+
         const userId = socketToUser.get(socket.id);
         if (!userId) {
             console.error(`[socket] User not identified for socket ${socket.id}`);
             return;
         }
 
-        const game = getGame(data.roomId);
+        console.log(`[socket] Registering handlers for user ${userId} (type: ${typeof userId}) in room ${numericRoomId}`);
+
+        const game = getGame(numericRoomId);
         if (game) {
-            registerPokerHandlers(io, socket, userId, data.roomId);
-            console.log(`[socket] Registered poker handlers for user ${userId} in room ${data.roomId}`);
+            registerPokerHandlers(io, socket, userId, numericRoomId);
+            console.log(`[socket] Registered poker handlers for user ${userId} in room ${numericRoomId}`);
+        } else {
+            console.error(`[socket] No game found for room ${numericRoomId}`);
         }
     });
 
