@@ -1,8 +1,7 @@
 {
   "name": "term-project",
   "version": "1.0.0",
-  "type": "module",
-  "main": "dist/backend/server.ts",
+  "main": "dist/backend/server.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/backend/server.ts",
     "build": "tsc",
@@ -11,16 +10,21 @@
     "migrate:down": "NODE_OPTIONS='--import tsx' node-pg-migrate down"
   },
   "dependencies": {
+    "@types/socket.io": "^3.0.1",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
-    "express": "^5.2.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
     "node-pg-migrate": "^8.0.3",
     "pg": "^8.16.3",
+    "socket.io": "^4.8.1",
     "vite-express": "^0.21.1"
   },
   "devDependencies": {
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.1",
+    "@types/pg": "^8.16.0",
     "autoprefixer": "^10.4.0",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
