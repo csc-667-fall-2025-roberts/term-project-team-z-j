@@ -8,7 +8,7 @@ import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import ViteExpress from 'vite-express';
 
-import { createGame, getGameDetails, getGames, joinGame } from './controllers/gameController';
+import { createGame, getGames, getGameDetails, joinGame, startGame, handleAction } from './controllers/gameController';
 import { getMessages, sendMessage } from './controllers/messageController';
 import pool, { testConnection } from './database';
 
@@ -207,6 +207,12 @@ app.post('/games/create', requireAuth, createGame);
 
 // Join game (API)
 app.post('/api/games/:id/join', requireAuth, joinGame);
+
+// Start game
+app.post('/api/games/:id/start', requireAuth, startGame);
+
+// Handle player action  
+app.post('/api/hands/:handId/action', requireAuth, handleAction);
 
 // ---------- PAGE ROUTES ----------
 
