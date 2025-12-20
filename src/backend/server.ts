@@ -59,6 +59,11 @@ function requireAuth(req: any, res: any, next: any) {
 // ---------- MESSAGE ROUTES ----------
 app.post('/api/rooms/:roomId/messages', sendMessage);
 app.get('/api/rooms/:roomId/messages', getMessages);
+app.post('/chat/send', requireAuth, async (req, res) => {
+  // TEMP: lobby chat placeholder
+  res.redirect('/lobby');
+});
+
 
 // ---------- SOCKET.IO ----------
 io.on('connection', (socket) => {
