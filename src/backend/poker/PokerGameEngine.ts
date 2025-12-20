@@ -4,9 +4,9 @@
  */
 
 import { Server } from 'socket.io';
-import { query } from '../database';
-import { CardManager } from './CardManager';
-import { Card, PlayerState } from './types';
+import { query } from '../database.js';
+import { CardManager } from './CardManager.js';
+import { Card, PlayerState } from './types.js';
 
 export interface GameState {
     roomId: number;
@@ -761,8 +761,6 @@ export class PokerGameEngine {
 
         // Multiple players remain - evaluate hands at showdown
         // Requirement 6.1: Evaluate each active player's hand using HandEvaluator
-        const HandEvaluator = require('./HandEvaluator').HandEvaluator;
-        const PotManager = require('./PotManager').PotManager;
 
         // Find winner(s) using findWinners() (Requirement 6.2)
         const winnerIds = HandEvaluator.findWinners(activePlayers, this.gameState.boardCards);

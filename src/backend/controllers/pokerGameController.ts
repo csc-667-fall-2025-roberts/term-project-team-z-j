@@ -4,7 +4,7 @@
  */
 
 import { Server, Socket } from 'socket.io';
-import { PokerGameEngine } from '../poker/PokerGameEngine';
+import { PokerGameEngine } from '../poker/PokerGameEngine.js';
 
 // Store active game engines by room ID
 const activeGames = new Map<number, PokerGameEngine>();

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import pool from '../database';
-import { PokerGameEngine } from '../poker/PokerGameEngine';
-import { getGame, registerGame } from './pokerGameController';
+import pool from '../database.js';
+import { PokerGameEngine } from '../poker/PokerGameEngine.js';
+import { getGame, registerGame } from './pokerGameController.js';
 
 // Create a new game room
 export async function createGame(req: Request, res: Response) {

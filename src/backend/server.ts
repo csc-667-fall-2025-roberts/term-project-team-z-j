@@ -8,10 +8,10 @@ import { Server } from 'socket.io';
 import { fileURLToPath } from 'url';
 import ViteExpress from 'vite-express';
 
-import { createGame, endGame, getGameDetails, getGameResults, getGames, joinGame, leaveGame, startGame } from './controllers/gameController';
-import { getMessages, sendMessage } from './controllers/messageController';
-import { getGame, registerPokerHandlers } from './controllers/pokerGameController';
-import pool, { testConnection } from './database';
+import { createGame, endGame, getGameDetails, getGameResults, getGames, joinGame, leaveGame, startGame } from './controllers/gameController.js';
+import { getMessages, sendMessage } from './controllers/messageController.js';
+import { getGame, registerPokerHandlers } from './controllers/pokerGameController.js';
+import pool, { testConnection } from './database.js';
 
 // Session types are in types.d.ts
 

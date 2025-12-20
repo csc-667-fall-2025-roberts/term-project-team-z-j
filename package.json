@@ -1,6 +1,7 @@
 {
   "name": "term-project",
   "version": "1.0.0",
+  "type": "module",
   "main": "dist/backend/server.js",
   "scripts": {
     "dev": "nodemon --exec tsx src/backend/server.ts",

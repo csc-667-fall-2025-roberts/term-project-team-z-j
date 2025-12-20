@@ -2,7 +2,7 @@
  * PotManager - Handles pot calculations, side pots, and chip distribution
  */
 
-import { PlayerState } from './types';
+import { PlayerState } from './types.js';
 
 export interface PotInfo {
     amount: number;

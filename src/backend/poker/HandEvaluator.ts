@@ -1,4 +1,4 @@
-import { Card, HandRank, PlayerState } from './types';
+import { Card, HandRank, PlayerState } from './types.js';
 
 /**
  * HandEvaluator evaluates poker hands and determines winners

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { Card } from './types';
+import { Card } from './types.js';
 
 /**
  * CardManager handles card representation, deck management, and dealing

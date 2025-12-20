@@ -1,4 +1,4 @@
-import { query } from '../database';
+import { query } from '../database.js';
 
 // Special room ID for lobby chat (0 = lobby, any other number = game room)
 export const LOBBY_ROOM_ID = 0;
