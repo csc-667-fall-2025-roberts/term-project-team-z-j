@@ -1,4 +1,5 @@
-import { io } from 'socket.io-client';
+// @ts-ignore - socket.io is loaded via CDN
+const io = (window as any).io;
 
 // Game state
 interface GameState {
@@ -15,7 +16,43 @@ const gameState: GameState = {
     gameId: null
 };
 
-const socket = io();
+// Initialize socket with reconnection options
+let gameSocket: any;
+
+function initializeSocket() {
+    if (gameSocket) return gameSocket;
+
+    gameSocket = io({
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5
+    });
+
+    // Handle socket connection events
+    gameSocket.on('connect', () => {
+        console.log('Socket connected:', gameSocket.id);
+        // Rejoin room on reconnect
+        if (gameState.gameId) {
+            console.log('Rejoining room after reconnect:', gameState.gameId);
+            joinGameRoom(gameState.gameId);
+        }
+    });
+
+    gameSocket.on('disconnect', (reason: any) => {
+        console.log('Socket disconnected:', reason);
+    });
+
+    gameSocket.on('connect_error', (error: any) => {
+        console.error('Socket connection error:', error);
+    });
+
+    gameSocket.on('reconnect', (attemptNumber: any) => {
+        console.log('Socket reconnected after', attemptNumber, 'attempts');
+    });
+
+    return gameSocket;
+}
 
 // Card rendering using actual SVG files from public/cards
 function createCard(rank: string, suit: string, faceDown: boolean = false): string {
@@ -166,11 +203,16 @@ function renderPlayers(players: any[]) {
 
 // Join game room via socket
 function joinGameRoom(gameId: string) {
+    console.log('Joining game room:', gameId);
+    const socket = initializeSocket();
     socket.emit('room:join', { roomId: gameId });
 }
 
 // Initialize game
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize socket
+    const socket = initializeSocket();
+
     // Get game ID from URL
     const pathParts = window.location.pathname.split('/');
     const gameId = pathParts[pathParts.length - 1];
@@ -227,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Socket event listeners
-    socket.on('room:player:joined', (data) => {
+    socket.on('room:player:joined', (data: any) => {
         console.log('Player joined:', data);
         // Reload game details to update player list
         if (gameState.gameId) {
@@ -235,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    socket.on('room:player:left', (data) => {
+    socket.on('room:player:left', (data: any) => {
         console.log('Player left:', data);
         // Reload game details to update player list
         if (gameState.gameId) {
@@ -243,13 +285,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    socket.on('game:started', (data) => {
+    socket.on('game:started', (data: any) => {
         console.log('Game started:', data);
         // Reload page to update game state
         window.location.reload();
     });
 
-    socket.on('room:message:new', (data) => {
+    socket.on('room:message:new', (data: any) => {
         console.log('New message:', data);
         // Update chat UI
     });

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Room - Texas Hold 'em</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="min-h-screen bg-gradient-to-br from-blue-400 via-blue-300 to-cyan-300 relative overflow-hidden">
+      <!-- Header -->
+      <div class="bg-white shadow-md relative z-30">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <a href="/lobby" class="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+              </svg>
+              <span class="text-sm font-medium">Back to Lobby</span>
+            </a>
+            <span class="text-gray-400">|</span>
+            <h1 class="text-3xl font-serif italic text-blue-900" style="font-family: 'Georgia', serif;">Texas Hold 'em</h1>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="text-right">
+              <p class="text-sm text-gray-500">Logged in as</p>
+              <p class="font-semibold text-gray-700"><%= typeof username !== 'undefined' ? username : 'Player' %></p>
+            </div>
+            <button
+              onclick="location.href='/auth/logout'"
+              class="bg-red-500 hover:bg-red-600 text-white font-semibold px-5 py-2 rounded-full transition-all duration-300"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Game Container -->
+      <div class="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 py-4">
+        <div class="w-full max-w-7xl mx-auto">
+          
+          <!-- Table with Buttons and Timer -->
+          <div class="flex items-center gap-4">
+            <!-- Left Side - Game Control Buttons -->
+            <div class="flex flex-col gap-3 -mt-64">
+              <% if (typeof ownerId !== 'undefined' && ownerId === userId) { %>
+                <button
+                  id="startGameBtn"
+                  onclick="startGame()"
+                  class="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap"
+                >
+                  Start Game
+                </button>
+              <% } %>
+              <button
+                id="leaveGameBtn"
+                onclick="leaveGame()"
+                class="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap"
+              >
+                Leave Game
+              </button>
+            </div>
+
+            <!-- Center - Table -->
+            <div class="flex-1">
+              <%- include('../utils/table') %>
+            </div>
+
+            <!-- Right Side - Timer -->
+            <div class="flex items-center justify-center -mt-64">
+              <div class="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-lg">
+                <div class="flex flex-col items-center gap-2">
+                  <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span id="gameClockMain" class="text-3xl font-mono font-bold text-gray-800">00:00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-24">
+            <%- include('../utils/actions') %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%- include('../utils/game-elements') %>
+    <script>
+      // Make userId and gameId available to the frontend
+      window.currentUserId = <%= userId %>;
+      window.currentGameId = <%= gameId %>;
+      
+      // Clock timer
+      let startTime = Date.now();
+      function updateClock() {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const minutes = Math.floor(elapsed / 60);
+        const seconds = elapsed % 60;
+        const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        
+        // Update main clock
+        const clockMainElement = document.getElementById('gameClockMain');
+        if (clockMainElement) {
+          clockMainElement.textContent = timeString;
+        }
+      }
+      setInterval(updateClock, 1000);
+      
+      // Start game function (owner only)
+      async function startGame() {
+        try {
+          const response = await fetch(`/api/games/${window.currentGameId}/start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            alert('Game started!');
+            // Reload to update game state
+            window.location.reload();
+          } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to start game');
+          }
+        } catch (error) {
+          console.error('Error starting game:', error);
+          alert('Failed to start game');
+        }
+      }
+      
+      // Leave game function
+      async function leaveGame() {
+        if (!confirm('Are you sure you want to leave this game?')) {
+          return;
+        }
+        
+        try {
+          const response = await fetch(`/api/games/${window.currentGameId}/leave`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            // Redirect to lobby
+            window.location.href = '/lobby';
+          } else {
+            const data = await response.json();
+            alert(data.error || 'Failed to leave game');
+          }
+        } catch (error) {
+          console.error('Error leaving game:', error);
+          alert('Failed to leave game');
+        }
+      }
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module">
+      // @ts-ignore - socket.io is loaded via CDN
+      const io = window.io;
+
+      // Game state
+      const gameState = {
+          pot: 0,
+          currentBet: 0,
+          playerStack: 1500,
+          gameId: window.currentGameId,
+          userId: window.currentUserId,
+          isMyTurn: false,
+          holeCards: null,
+          boardCards: [],
+          turnTimeRemaining: 0
+      };
+
+      // Initialize socket with reconnection options
+      let gameSocket;
+
+      function initializeSocket() {
+          if (gameSocket) return gameSocket;
+          
+          gameSocket = io({
+              reconnection: true,
+              reconnectionDelay: 1000,
+              reconnectionDelayMax: 5000,
+              reconnectionAttempts: 5
+          });
+
+          // Handle socket connection events
+          gameSocket.on('connect', () => {
+              console.log('Socket connected:', gameSocket.id);
+              
+              // Identify user to server
+              gameSocket.emit('auth:identify', { userId: gameState.userId });
+              
+              // Rejoin room on reconnect
+              if (gameState.gameId) {
+                  console.log('Joining/rejoining room:', gameState.gameId);
+                  joinGameRoom(gameState.gameId);
+              }
+          });
+
+          gameSocket.on('disconnect', (reason) => {
+              console.log('Socket disconnected:', reason);
+          });
+
+          gameSocket.on('connect_error', (error) => {
+              console.error('Socket connection error:', error);
+          });
+
+          gameSocket.on('reconnect', (attemptNumber) => {
+              console.log('Socket reconnected after', attemptNumber, 'attempts');
+          });
+
+          return gameSocket;
+      }
+
+      // Join game room via socket
+      function joinGameRoom(gameId) {
+          console.log('Joining game room:', gameId);
+          const socket = initializeSocket();
+          socket.emit('room:join', { roomId: gameId });
+      }
+
+      // Update pot display
+      function updatePotDisplay(pot) {
+          const potElement = document.getElementById('potAmount');
+          if (potElement) {
+              potElement.textContent = `$${pot}`;
+          }
+          gameState.pot = pot;
+      }
+
+      // Update player stack display
+      function updatePlayerStack(userId, stack) {
+          const playerElement = document.querySelector(`[data-player="${userId}"]`);
+          if (playerElement) {
+              const stackElement = playerElement.querySelector('.text-green-400');
+              if (stackElement) {
+                  stackElement.textContent = `$${stack}`;
+              }
+          }
+          
+          if (userId === gameState.userId) {
+              gameState.playerStack = stack;
+          }
+      }
+
+      // Update hole cards display
+      function updateHoleCards(cards) {
+          gameState.holeCards = cards;
+          
+          // Find current user's card display
+          const currentUserElement = document.querySelector(`[data-player="${gameState.userId}"]`);
+          if (!currentUserElement) return;
+          
+          const cardContainer = currentUserElement.querySelector('.flex.gap-2');
+          if (!cardContainer) return;
+          
+          // Update card images
+          const cardImages = cardContainer.querySelectorAll('img');
+          if (cardImages.length >= 2 && cards.length >= 2) {
+              cardImages[0].src = `/cards/${getCardImageName(cards[0])}`;
+              cardImages[1].src = `/cards/${getCardImageName(cards[1])}`;
+          }
+      }
+
+      // Get card image filename from card object
+      function getCardImageName(card) {
+          const rankMap = {
+              '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+              'T': '10', 'J': 'jack', 'Q': 'queen', 'K': 'king', 'A': 'ace'
+          };
+          const suitMap = {
+              'h': 'hearts', 'd': 'diamonds', 'c': 'clubs', 's': 'spades'
+          };
+          
+          const rank = rankMap[card.rank] || card.rank;
+          const suit = suitMap[card.suit] || card.suit;
+          
+          return `${rank}_of_${suit}.svg`;
+      }
+
+      // Update community cards display
+      function updateCommunityCards(cards) {
+          gameState.boardCards = cards;
+          
+          const communityCardsContainer = document.getElementById('communityCards');
+          if (!communityCardsContainer) return;
+          
+          // Clear existing cards
+          communityCardsContainer.innerHTML = '';
+          
+          // Add new cards
+          cards.forEach(card => {
+              const img = document.createElement('img');
+              img.src = `/cards/${getCardImageName(card)}`;
+              img.alt = 'Community Card';
+              img.className = 'w-16 h-24 rounded-lg shadow-2xl';
+              img.style.filter = 'drop-shadow(0 8px 16px rgba(0,0,0,0.4))';
+              communityCardsContainer.appendChild(img);
+          });
+      }
+
+      // Update turn timer display
+      function updateTurnTimer(timeRemaining) {
+          gameState.turnTimeRemaining = timeRemaining;
+          
+          const timerElement = document.getElementById('gameClockMain');
+          if (timerElement) {
+              const minutes = Math.floor(timeRemaining / 60);
+              const seconds = timeRemaining % 60;
+              timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+              
+              // Change color based on time remaining
+              if (timeRemaining <= 5) {
+                  timerElement.style.color = '#ef4444'; // red
+              } else if (timeRemaining <= 10) {
+                  timerElement.style.color = '#f59e0b'; // orange
+              } else {
+                  timerElement.style.color = '#1f2937'; // gray-800
+              }
+          }
+      }
+
+      // Enable/disable action buttons based on turn
+      function updateActionButtons(isMyTurn, currentBet) {
+          gameState.isMyTurn = isMyTurn;
+          gameState.currentBet = currentBet || 0;
+          
+          const foldBtn = document.getElementById('foldBtn');
+          const checkBtn = document.getElementById('checkBtn');
+          const raiseBtn = document.getElementById('raiseBtn');
+          const allinBtn = document.getElementById('allinBtn');
+          const betSlider = document.getElementById('betSlider');
+          
+          if (isMyTurn) {
+              // Enable buttons
+              if (foldBtn) foldBtn.disabled = false;
+              if (checkBtn) checkBtn.disabled = false;
+              if (raiseBtn) raiseBtn.disabled = false;
+              if (allinBtn) allinBtn.disabled = false;
+              if (betSlider) betSlider.disabled = false;
+              
+              // Update button styles
+              if (foldBtn) foldBtn.style.opacity = '1';
+              if (checkBtn) checkBtn.style.opacity = '1';
+              if (raiseBtn) raiseBtn.style.opacity = '1';
+              if (allinBtn) allinBtn.style.opacity = '1';
+              if (betSlider) betSlider.style.opacity = '1';
+          } else {
+              // Disable buttons
+              if (foldBtn) foldBtn.disabled = true;
+              if (checkBtn) checkBtn.disabled = true;
+              if (raiseBtn) raiseBtn.disabled = true;
+              if (allinBtn) allinBtn.disabled = true;
+              if (betSlider) betSlider.disabled = true;
+              
+              // Update button styles
+              if (foldBtn) foldBtn.style.opacity = '0.5';
+              if (checkBtn) checkBtn.style.opacity = '0.5';
+              if (raiseBtn) raiseBtn.style.opacity = '0.5';
+              if (allinBtn) allinBtn.style.opacity = '0.5';
+              if (betSlider) betSlider.style.opacity = '0.5';
+          }
+      }
+
+      // Add game log message
+      function addGameLog(message) {
+          console.log('[Game Log]', message);
+          // TODO: Add to a game log UI element if needed
+      }
+
+      // Socket event listeners for poker game
+      function registerPokerEventListeners(socket) {
+          // Hand started
+          socket.on('game:hand:started', (data) => {
+              console.log('Hand started:', data);
+              addGameLog(`Hand #${data.handNumber} started`);
+              updatePotDisplay(data.pot || 0);
+          });
+
+          // Cards dealt (private to each player)
+          socket.on('game:cards:dealt', (data) => {
+              if (data.userId === gameState.userId) {
+                  console.log('Received hole cards:', data.holeCards);
+                  updateHoleCards(data.holeCards);
+              }
+          });
+
+          // Street advanced (flop, turn, river)
+          socket.on('game:street:advanced', (data) => {
+              console.log('Street advanced:', data);
+              addGameLog(`${data.street.toUpperCase()} dealt`);
+              updateCommunityCards(data.boardCards);
+              updatePotDisplay(data.pot);
+          });
+
+          // Turn started
+          socket.on('game:turn:started', (data) => {
+              console.log('Turn started:', data);
+              const isMyTurn = data.userId === gameState.userId;
+              updateActionButtons(isMyTurn, gameState.currentBet);
+              updateTurnTimer(data.timeRemaining);
+              
+              if (isMyTurn) {
+                  addGameLog('Your turn!');
+              }
+          });
+
+          // Turn tick (timer update)
+          socket.on('game:turn:tick', (data) => {
+              updateTurnTimer(data.timeRemaining);
+          });
+
+          // Action performed
+          socket.on('game:action:performed', (data) => {
+              console.log('Action performed:', data);
+              addGameLog(`${data.username} ${data.action}${data.amount > 0 ? ` $${data.amount}` : ''}`);
+              updatePotDisplay(data.pot);
+          });
+
+          // Pot updated
+          socket.on('game:pot:updated', (data) => {
+              console.log('Pot updated:', data);
+              updatePotDisplay(data.pot);
+          });
+
+          // Winner determined
+          socket.on('game:winner:determined', (data) => {
+              console.log('Winner determined:', data);
+              
+              data.winners.forEach(winner => {
+                  addGameLog(`${winner.username} wins $${winner.amountWon} with ${winner.handRank}`);
+                  updatePlayerStack(winner.userId, winner.stack);
+              });
+          });
+
+          // Stacks updated
+          socket.on('game:stacks:updated', (data) => {
+              console.log('Stacks updated:', data);
+              
+              data.players.forEach(player => {
+                  updatePlayerStack(player.userId, player.stack);
+              });
+              
+              if (data.eliminatedPlayers && data.eliminatedPlayers.length > 0) {
+                  data.eliminatedPlayers.forEach(player => {
+                      addGameLog(`${player.username} eliminated`);
+                  });
+              }
+          });
+
+          // Game error
+          socket.on('game:error', (data) => {
+              console.error('Game error:', data);
+              alert(data.message);
+          });
+
+          // Game ended
+          socket.on('game:ended', (data) => {
+              console.log('Game ended:', data);
+              if (data.winner) {
+                  addGameLog(`Game over! ${data.winner.username} wins with $${data.winner.stack}`);
+              } else {
+                  addGameLog('Game over!');
+              }
+          });
+      }
+
+      // Action button handlers
+      function setupActionButtons(socket) {
+          const foldBtn = document.getElementById('foldBtn');
+          const checkBtn = document.getElementById('checkBtn');
+          const raiseBtn = document.getElementById('raiseBtn');
+          const allinBtn = document.getElementById('allinBtn');
+          const betSlider = document.getElementById('betSlider');
+          
+          if (foldBtn) {
+              foldBtn.addEventListener('click', () => {
+                  if (gameState.isMyTurn) {
+                      console.log('Folding...');
+                      socket.emit('game:action:fold');
+                  }
+              });
+          }
+          
+          if (checkBtn) {
+              checkBtn.addEventListener('click', () => {
+                  if (gameState.isMyTurn) {
+                      console.log('Checking...');
+                      socket.emit('game:action:check');
+                  }
+              });
+          }
+          
+          if (raiseBtn) {
+              raiseBtn.addEventListener('click', () => {
+                  if (gameState.isMyTurn) {
+                      const amount = parseInt(betSlider.value);
+                      console.log('Raising to:', amount);
+                      socket.emit('game:action:raise', { amount });
+                  }
+              });
+          }
+          
+          if (allinBtn) {
+              allinBtn.addEventListener('click', () => {
+                  if (gameState.isMyTurn) {
+                      console.log('Going all-in...');
+                      socket.emit('game:action:allin');
+                  }
+              });
+          }
+      }
+
+      // Initialize game
+      document.addEventListener('DOMContentLoaded', () => {
+          // Initialize socket
+          const socket = initializeSocket();
+          
+          // Register poker event listeners
+          registerPokerEventListeners(socket);
+          
+          // Setup action buttons
+          setupActionButtons(socket);
+          
+          // Disable action buttons initially
+          updateActionButtons(false, 0);
+
+          // Socket event listeners for room management
+          socket.on('room:player:joined', (data) => {
+              console.log('Player joined:', data);
+              window.location.reload();
+          });
+
+          socket.on('room:player:left', (data) => {
+              console.log('Player left:', data);
+              window.location.reload();
+          });
+
+          socket.on('game:started', (data) => {
+              console.log('Game started:', data);
+              window.location.reload();
+          });
+      });
+    </script>
+  </body>
+</html>

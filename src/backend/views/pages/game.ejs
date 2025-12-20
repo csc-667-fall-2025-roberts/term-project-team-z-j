@@ -22,13 +22,6 @@
             <h1 class="text-3xl font-serif italic text-blue-900" style="font-family: 'Georgia', serif;">Texas Hold 'em</h1>
           </div>
           <div class="flex items-center gap-6">
-            <!-- Clock Timer -->
-            <div class="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
-              <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-              <span id="gameClock" class="text-lg font-mono font-semibold text-gray-700">00:00</span>
-            </div>
             <div class="text-right">
               <p class="text-sm text-gray-500">Logged in as</p>
               <p class="font-semibold text-gray-700"><%= typeof username !== 'undefined' ? username : 'Player' %></p>
@@ -44,32 +37,50 @@
       </div>
 
       <!-- Main Game Container -->
-      <div class="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 py-8">
-        <div class="w-full">
+      <div class="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 py-4">
+        <div class="w-full max-w-7xl mx-auto">
           
-          <%- include('../utils/table') %>
-          
-          <!-- Game Control Buttons -->
-          <div class="mt-8 flex justify-center gap-4">
-            <% if (typeof ownerId !== 'undefined' && ownerId === userId) { %>
+          <!-- Table with Buttons and Timer -->
+          <div class="flex items-center gap-4">
+            <!-- Left Side - Game Control Buttons -->
+            <div class="flex flex-col gap-3 -mt-64">
+              <% if (typeof ownerId !== 'undefined' && ownerId === userId) { %>
+                <button
+                  id="startGameBtn"
+                  onclick="startGame()"
+                  class="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap"
+                >
+                  Start Game
+                </button>
+              <% } %>
               <button
-                id="startGameBtn"
-                onclick="startGame()"
-                class="bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg"
+                id="leaveGameBtn"
+                onclick="leaveGame()"
+                class="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg whitespace-nowrap"
               >
-                Start Game
+                Leave Game
               </button>
-            <% } %>
-            <button
-              id="leaveGameBtn"
-              onclick="leaveGame()"
-              class="bg-red-500 hover:bg-red-600 text-white font-semibold px-8 py-3 rounded-lg transition-all duration-300 shadow-lg"
-            >
-              Leave Game
-            </button>
+            </div>
+
+            <!-- Center - Table -->
+            <div class="flex-1">
+              <%- include('../utils/table') %>
+            </div>
+
+            <!-- Right Side - Timer -->
+            <div class="flex items-center justify-center -mt-64">
+              <div class="bg-white/90 backdrop-blur-sm px-6 py-4 rounded-xl shadow-lg">
+                <div class="flex flex-col items-center gap-2">
+                  <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  <span id="gameClockMain" class="text-3xl font-mono font-bold text-gray-800">00:00</span>
+                </div>
+              </div>
+            </div>
           </div>
           
-          <div class="mt-16">
+          <div class="mt-24">
             <%- include('../utils/actions') %>
           </div>
         </div>
@@ -82,19 +93,6 @@
       window.currentUserId = <%= userId %>;
       window.currentGameId = <%= gameId %>;
       
-      // Clock timer
-      let startTime = Date.now();
-      function updateClock() {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        const minutes = Math.floor(elapsed / 60);
-        const seconds = elapsed % 60;
-        const clockElement = document.getElementById('gameClock');
-        if (clockElement) {
-          clockElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-      }
-      setInterval(updateClock, 1000);
-      
       // Start game function (owner only)
       async function startGame() {
         try {
@@ -104,9 +102,13 @@
           });
           
           if (response.ok) {
-            alert('Game started!');
-            // Reload to update game state
-            window.location.reload();
+            // Don't reload - the socket events will handle the game start
+            console.log('[Game] Game started successfully');
+            // Hide the start button
+            const startBtn = document.getElementById('startGameBtn');
+            if (startBtn) {
+              startBtn.style.display = 'none';
+            }
           } else {
             const data = await response.json();
             alert(data.error || 'Failed to start game');
@@ -130,7 +132,6 @@
           });
           
           if (response.ok) {
-            // Redirect to lobby
             window.location.href = '/lobby';
           } else {
             const data = await response.json();
@@ -142,6 +143,483 @@
         }
       }
     </script>
-    <script type="module" src="/game.ts"></script>
+    <!-- Load Socket.io client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Inline game initialization to avoid MIME type issues -->
+    <script>
+      // Wait for socket.io to load
+      window.addEventListener('DOMContentLoaded', () => {
+        const gameId = window.currentGameId;
+        const userId = window.currentUserId;
+        
+        console.log('[Game Page] Initializing with gameId:', gameId, 'userId:', userId);
+        
+        if (!gameId || !userId) {
+          console.error('[Game Page] Missing gameId or userId');
+          return;
+        }
+        
+        // Game state
+        const gameState = {
+          isMyTurn: false,
+          currentBet: 0,
+          pot: 0,
+          holeCards: null,
+          boardCards: [],
+          handNumber: 0
+        };
+        
+        // Initialize socket
+        const socket = io({
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          reconnectionAttempts: 5,
+          transports: ['websocket', 'polling']
+        });
+        
+        // Socket connection handlers
+        socket.on('connect', () => {
+          console.log('[Socket] Connected:', socket.id);
+          
+          // Identify user
+          socket.emit('auth:identify', { userId: userId });
+          
+          // Join room after a short delay
+          setTimeout(() => {
+            console.log('[Socket] Joining room:', gameId);
+            socket.emit('room:join', { roomId: gameId });
+          }, 100);
+        });
+        
+        socket.on('disconnect', (reason) => {
+          console.log('[Socket] Disconnected:', reason);
+        });
+        
+        socket.on('room:joined', (data) => {
+          console.log('[Socket] Room joined successfully:', data);
+        });
+        
+        // Player joined event
+        socket.on('room:player:joined', (data) => {
+          console.log('[Socket] ===== PLAYER JOINED =====');
+          console.log('[Socket] Player data:', data);
+          showNotification(`${data.username || 'A player'} joined the game`, 'success');
+          // Reload page to show new player (only if game hasn't started)
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        });
+        
+        // Player left event
+        socket.on('room:player:left', (data) => {
+          console.log('[Socket] ===== PLAYER LEFT =====');
+          showNotification('A player left the game', 'warning');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        });
+        
+        // Game started event
+        socket.on('game:started', (data) => {
+          console.log('[Socket] ===== GAME STARTED =====');
+          showNotification('Game has started!', 'success');
+          
+          // Hide start button
+          const startBtn = document.getElementById('startGameBtn');
+          if (startBtn) {
+            startBtn.style.display = 'none';
+          }
+          
+          // Register poker handlers now that game has started
+          console.log('[Socket] Registering poker handlers...');
+          socket.emit('game:register:handlers', { roomId: gameId });
+        });
+        
+        // Hand started event
+        socket.on('game:hand:started', (data) => {
+          console.log('[Socket] ===== HAND STARTED =====', data);
+          gameState.handNumber = data.handNumber;
+          gameState.pot = data.pot || 0;
+          updatePotDisplay(gameState.pot);
+          
+          // Clear community cards for new hand
+          const communityCards = document.getElementById('communityCards');
+          if (communityCards) {
+            communityCards.innerHTML = '';
+          }
+          
+          showNotification(`Hand #${data.handNumber} started`, 'info');
+        });
+        
+        // Cards dealt event (private to each player)
+        socket.on('game:cards:dealt', (data) => {
+          console.log('[Socket] ===== CARDS DEALT =====', data);
+          
+          // Only update if these are our cards
+          if (data.userId === userId && data.holeCards) {
+            gameState.holeCards = data.holeCards;
+            updateHoleCards(data.holeCards);
+            showNotification('Cards dealt!', 'success');
+          }
+        });
+        
+        // Turn started event
+        socket.on('game:turn:started', (data) => {
+          console.log('[Socket] ===== TURN STARTED =====', data);
+          
+          const isMyTurn = data.userId === userId;
+          gameState.isMyTurn = isMyTurn;
+          
+          updateActionButtons(isMyTurn);
+          
+          if (data.timeRemaining !== undefined) {
+            updateTimer(data.timeRemaining);
+          }
+          
+          if (isMyTurn) {
+            showNotification('Your turn!', 'warning');
+            highlightCurrentPlayer(userId);
+          } else {
+            highlightCurrentPlayer(data.userId);
+          }
+        });
+        
+        // Turn tick event (timer update)
+        socket.on('game:turn:tick', (data) => {
+          if (data.timeRemaining !== undefined) {
+            updateTimer(data.timeRemaining);
+          }
+        });
+        
+        // Action performed event
+        socket.on('game:action:performed', (data) => {
+          console.log('[Socket] ===== ACTION PERFORMED =====', data);
+          
+          const actionText = data.amount > 0 
+            ? `${data.username} ${data.action} $${data.amount}`
+            : `${data.username} ${data.action}`;
+          showNotification(actionText, 'info');
+          
+          if (data.pot !== undefined) {
+            gameState.pot = data.pot;
+            updatePotDisplay(data.pot);
+          }
+          
+          if (data.currentBet !== undefined) {
+            gameState.currentBet = data.currentBet;
+          }
+        });
+        
+        // Pot updated event
+        socket.on('game:pot:updated', (data) => {
+          console.log('[Socket] ===== POT UPDATED =====', data);
+          if (data.pot !== undefined) {
+            gameState.pot = data.pot;
+            updatePotDisplay(data.pot);
+          }
+        });
+        
+        // Street advanced event (flop, turn, river)
+        socket.on('game:street:advanced', (data) => {
+          console.log('[Socket] ===== STREET ADVANCED =====', data);
+          
+          showNotification(`${data.street.toUpperCase()} dealt`, 'success');
+          
+          if (data.boardCards) {
+            gameState.boardCards = data.boardCards;
+            updateCommunityCards(data.boardCards);
+          }
+          
+          if (data.pot !== undefined) {
+            gameState.pot = data.pot;
+            updatePotDisplay(data.pot);
+          }
+        });
+        
+        // Winner determined event
+        socket.on('game:winner:determined', (data) => {
+          console.log('[Socket] ===== WINNER DETERMINED =====', data);
+          
+          if (data.winners && data.winners.length > 0) {
+            data.winners.forEach(winner => {
+              showNotification(`${winner.username} wins $${winner.amountWon} with ${winner.handRank}`, 'success');
+              
+              // Update player stack display
+              updatePlayerStack(winner.userId, winner.stack);
+            });
+          }
+        });
+        
+        // Stacks updated event
+        socket.on('game:stacks:updated', (data) => {
+          console.log('[Socket] ===== STACKS UPDATED =====', data);
+          
+          if (data.players) {
+            data.players.forEach(player => {
+              updatePlayerStack(player.userId, player.stack);
+            });
+          }
+          
+          if (data.eliminatedPlayers && data.eliminatedPlayers.length > 0) {
+            data.eliminatedPlayers.forEach(player => {
+              showNotification(`${player.username} eliminated!`, 'warning');
+            });
+          }
+        });
+        
+        // Game ended event
+        socket.on('game:ended', (data) => {
+          console.log('[Socket] ===== GAME ENDED =====', data);
+          
+          if (data.winner) {
+            showNotification(`Game Over! ${data.winner.username} wins with $${data.winner.stack}!`, 'success');
+          } else {
+            showNotification('Game Over!', 'info');
+          }
+          
+          // Disable all action buttons
+          updateActionButtons(false);
+        });
+        
+        // Game error event
+        socket.on('game:error', (data) => {
+          console.error('[Socket] ===== GAME ERROR =====', data);
+          showNotification(`Error: ${data.message}`, 'error');
+        });
+        
+        // ===== ACTION BUTTON HANDLERS =====
+        
+        // Fold button
+        const foldBtn = document.getElementById('foldBtn');
+        if (foldBtn) {
+          foldBtn.addEventListener('click', () => {
+            if (gameState.isMyTurn) {
+              console.log('[Action] Folding...');
+              socket.emit('game:action:fold');
+            }
+          });
+        }
+        
+        // Check button
+        const checkBtn = document.getElementById('checkBtn');
+        if (checkBtn) {
+          checkBtn.addEventListener('click', () => {
+            if (gameState.isMyTurn) {
+              console.log('[Action] Checking...');
+              socket.emit('game:action:check');
+            }
+          });
+        }
+        
+        // Call button
+        const callBtn = document.getElementById('callBtn');
+        if (callBtn) {
+          callBtn.addEventListener('click', () => {
+            if (gameState.isMyTurn) {
+              console.log('[Action] Calling...');
+              socket.emit('game:action:call');
+            }
+          });
+        }
+        
+        // Raise button
+        const raiseBtn = document.getElementById('raiseBtn');
+        const betSlider = document.getElementById('betSlider');
+        if (raiseBtn) {
+          raiseBtn.addEventListener('click', () => {
+            if (gameState.isMyTurn && betSlider) {
+              const amount = parseInt(betSlider.value);
+              console.log('[Action] Raising to:', amount);
+              socket.emit('game:action:raise', { amount });
+            }
+          });
+        }
+        
+        // All-in button
+        const allinBtn = document.getElementById('allinBtn');
+        if (allinBtn) {
+          allinBtn.addEventListener('click', () => {
+            if (gameState.isMyTurn) {
+              console.log('[Action] Going all-in...');
+              socket.emit('game:action:allin');
+            }
+          });
+        }
+        
+        // ===== HELPER FUNCTIONS =====
+        
+        function getCardImageName(card) {
+          const rankMap = {
+            '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+            'T': '10', 'J': 'jack', 'Q': 'queen', 'K': 'king', 'A': 'ace'
+          };
+          const suitMap = {
+            'h': 'hearts', 'd': 'diamonds', 'c': 'clubs', 's': 'spades'
+          };
+          const rank = rankMap[card.rank] || card.rank;
+          const suit = suitMap[card.suit] || card.suit;
+          return `${rank}_of_${suit}.svg`;
+        }
+        
+        function updateHoleCards(cards) {
+          console.log('[updateHoleCards] Updating cards for userId:', userId, 'cards:', cards);
+          
+          // Find current user's card container using the specific class
+          const currentUserElement = document.querySelector(`[data-player="${userId}"]`);
+          if (!currentUserElement) {
+            console.error('[updateHoleCards] Current user element not found for userId:', userId);
+            // List all player elements for debugging
+            const allPlayers = document.querySelectorAll('[data-player]');
+            console.log('[updateHoleCards] Available player elements:', Array.from(allPlayers).map(el => el.getAttribute('data-player')));
+            return;
+          }
+          
+          // Find the card container using the specific class
+          const cardContainer = currentUserElement.querySelector('.player-cards');
+          if (!cardContainer) {
+            console.error('[updateHoleCards] Card container (.player-cards) not found');
+            return;
+          }
+          
+          const cardImages = cardContainer.querySelectorAll('img');
+          console.log('[updateHoleCards] Found', cardImages.length, 'card images');
+          
+          if (cardImages.length >= 2 && cards.length >= 2) {
+            const card1Name = getCardImageName(cards[0]);
+            const card2Name = getCardImageName(cards[1]);
+            console.log('[updateHoleCards] Setting card images:', card1Name, card2Name);
+            
+            cardImages[0].src = `/cards/${card1Name}`;
+            cardImages[0].alt = `${cards[0].rank} of ${cards[0].suit}`;
+            cardImages[1].src = `/cards/${card2Name}`;
+            cardImages[1].alt = `${cards[1].rank} of ${cards[1].suit}`;
+            console.log('[updateHoleCards] Cards updated successfully');
+          } else {
+            console.error('[updateHoleCards] Not enough card images or cards:', cardImages.length, cards.length);
+          }
+        }
+        
+        function updateCommunityCards(cards) {
+          const container = document.getElementById('communityCards');
+          if (!container) return;
+          
+          container.innerHTML = '';
+          
+          cards.forEach(card => {
+            const img = document.createElement('img');
+            img.src = `/cards/${getCardImageName(card)}`;
+            img.alt = `${card.rank} of ${card.suit}`;
+            img.className = 'w-16 h-24 rounded-lg shadow-2xl';
+            img.style.filter = 'drop-shadow(0 8px 16px rgba(0,0,0,0.4))';
+            container.appendChild(img);
+          });
+        }
+        
+        function updatePotDisplay(pot) {
+          const potElement = document.getElementById('potAmount');
+          if (potElement) {
+            potElement.textContent = `$${pot}`;
+          }
+        }
+        
+        function updateTimer(timeRemaining) {
+          const timerElement = document.getElementById('gameClockMain');
+          if (timerElement) {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            // Change color based on time remaining
+            if (timeRemaining <= 5) {
+              timerElement.style.color = '#ef4444'; // red
+            } else if (timeRemaining <= 10) {
+              timerElement.style.color = '#f59e0b'; // orange
+            } else {
+              timerElement.style.color = '#1f2937'; // gray-800
+            }
+          }
+        }
+        
+        function updateActionButtons(isMyTurn) {
+          const buttons = ['foldBtn', 'checkBtn', 'callBtn', 'raiseBtn', 'allinBtn'];
+          
+          buttons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+              btn.disabled = !isMyTurn;
+              btn.style.opacity = isMyTurn ? '1' : '0.5';
+              btn.style.cursor = isMyTurn ? 'pointer' : 'not-allowed';
+            }
+          });
+          
+          const slider = document.getElementById('betSlider');
+          if (slider) {
+            slider.disabled = !isMyTurn;
+            slider.style.opacity = isMyTurn ? '1' : '0.5';
+          }
+        }
+        
+        function updatePlayerStack(playerId, stack) {
+          const playerElement = document.querySelector(`[data-player="${playerId}"]`);
+          if (playerElement) {
+            const stackElement = playerElement.querySelector('.text-green-400');
+            if (stackElement) {
+              stackElement.textContent = `$${stack}`;
+            }
+          }
+        }
+        
+        function highlightCurrentPlayer(playerId) {
+          // Remove highlight from all players
+          document.querySelectorAll('[data-player]').forEach(el => {
+            el.style.boxShadow = '';
+          });
+          
+          // Add highlight to current player
+          const currentPlayerEl = document.querySelector(`[data-player="${playerId}"]`);
+          if (currentPlayerEl) {
+            currentPlayerEl.style.boxShadow = '0 0 20px 5px rgba(251, 191, 36, 0.6)';
+          }
+        }
+        
+        function showNotification(message, type) {
+          console.log('[Notification]', message);
+          
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-20 right-4 px-6 py-3 rounded-lg shadow-lg text-white font-semibold z-50';
+          
+          // Set color based on type
+          if (type === 'success') {
+            notification.style.backgroundColor = '#10b981';
+          } else if (type === 'warning') {
+            notification.style.backgroundColor = '#f59e0b';
+          } else if (type === 'error') {
+            notification.style.backgroundColor = '#ef4444';
+          } else {
+            notification.style.backgroundColor = '#3b82f6';
+          }
+          
+          notification.textContent = message;
+          document.body.appendChild(notification);
+          
+          // Remove after 3 seconds
+          setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.3s';
+            setTimeout(() => {
+              if (notification.parentNode) {
+                document.body.removeChild(notification);
+              }
+            }, 300);
+          }, 3000);
+        }
+        
+        // Initialize action buttons as disabled
+        updateActionButtons(false);
+        
+        console.log('[Game Page] Socket initialized and all listeners registered');
+      });
+    </script>
   </body>
 </html>

@@ -10,6 +10,7 @@ import ViteExpress from 'vite-express';
 
 import { createGame, getGameDetails, getGames, joinGame, leaveGame, startGame } from './controllers/gameController';
 import { getMessages, sendMessage } from './controllers/messageController';
+import { getGame, registerPokerHandlers } from './controllers/pokerGameController';
 import pool, { testConnection } from './database';
 
 // Extend Express Request type to include session
@@ -65,6 +66,9 @@ app.use('/main.ts', (_req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/main.ts'));
 });
 
+// Serve frontend TypeScript files through Vite
+app.use('/src/frontend', express.static(path.join(__dirname, '../frontend')));
+
 // ---------- AUTH GUARD ----------
 function requireAuth(req: Request, res: Response, next: NextFunction) {
     if (!req.session?.user) return res.redirect('/auth/login');
@@ -74,24 +78,139 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 // ---------- MESSAGE ROUTES ----------
 app.post('/api/rooms/:roomId/messages', sendMessage);
 app.get('/api/rooms/:roomId/messages', getMessages);
-app.post('/chat/send', requireAuth, async (req, res) => {
+app.post('/chat/send', requireAuth, async (_req, res) => {
     // TEMP: lobby chat placeholder
     res.redirect('/lobby');
 });
 
 
 // ---------- SOCKET.IO ----------
+
+// Map socket IDs to user IDs for private messaging
+const socketToUser = new Map<string, number>();
+const userToSocket = new Map<number, string>();
+
 io.on('connection', (socket) => {
     console.log('[socket] User connected', socket.id);
 
+    // Handle user authentication for socket
+    socket.on('auth:identify', (data: { userId: number }) => {
+        console.log('[socket] ===== AUTH:IDENTIFY EVENT RECEIVED =====');
+        console.log('[socket] Data:', data);
+
+        if (!data?.userId) {
+            console.error('[socket] Invalid auth:identify data', data);
+            return;
+        }
+
+        // Clean up any existing mapping for this user
+        const existingSocketId = userToSocket.get(data.userId);
+        if (existingSocketId && existingSocketId !== socket.id) {
+            socketToUser.delete(existingSocketId);
+            console.log(`[socket] Cleaned up old socket ${existingSocketId} for user ${data.userId}`);
+        }
+
+        // Map socket to user
+        socketToUser.set(socket.id, data.userId);
+        userToSocket.set(data.userId, socket.id);
+
+        console.log(`[socket] User ${data.userId} identified on socket ${socket.id}`);
+    });
+
     socket.on('room:join', (data: any) => {
-        if (!data?.roomId) return;
-        socket.join(`room:${data.roomId}`);
-        console.log(`[socket] ${socket.id} joined room:${data.roomId}`);
+        console.log('[socket] ===== ROOM:JOIN EVENT RECEIVED =====');
+        console.log('[socket] Data:', data);
+
+        if (!data?.roomId) {
+            console.error('[socket] Invalid room:join data', data);
+            return;
+        }
+
+        const roomName = `room:${data.roomId}`;
+        socket.join(roomName);
+        console.log(`[socket] ${socket.id} joined ${roomName}`);
+
+        // Get user ID from socket mapping
+        const userId = socketToUser.get(socket.id);
+
+        if (!userId) {
+            console.error(`[socket] User not identified for socket ${socket.id}`);
+            return;
+        }
+
+        // Check if there's an active poker game for this room
+        const game = getGame(data.roomId);
+
+        if (game) {
+            // Register poker event handlers for this socket
+            registerPokerHandlers(io, socket, userId, data.roomId);
+            console.log(`[socket] Registered poker handlers for user ${userId} in room ${data.roomId}`);
+        } else {
+            console.log(`[socket] No active game found for room ${data.roomId} - handlers will be registered when game starts`);
+        }
+
+        // Always emit confirmation
+        socket.emit('room:joined', {
+            roomId: data.roomId,
+            userId: userId
+        });
+    });
+
+    // Handle request to register poker handlers (called when game starts)
+    socket.on('game:register:handlers', (data: { roomId: number }) => {
+        console.log('[socket] ===== GAME:REGISTER:HANDLERS EVENT RECEIVED =====');
+        console.log('[socket] Data:', data);
+
+        if (!data?.roomId) {
+            console.error('[socket] Invalid game:register:handlers data', data);
+            return;
+        }
+
+        const userId = socketToUser.get(socket.id);
+        if (!userId) {
+            console.error(`[socket] User not identified for socket ${socket.id}`);
+            return;
+        }
+
+        const game = getGame(data.roomId);
+        if (game) {
+            registerPokerHandlers(io, socket, userId, data.roomId);
+            console.log(`[socket] Registered poker handlers for user ${userId} in room ${data.roomId}`);
+        }
     });
 
     socket.on('disconnect', () => {
         console.log('[socket] User disconnected', socket.id);
+
+        // Get user ID before removing mapping
+        const userId = socketToUser.get(socket.id);
+
+        // Handle player disconnection during active game
+        if (userId) {
+            // Find which room(s) the user was in
+            const rooms = Array.from(socket.rooms).filter(room => room.startsWith('room:'));
+
+            for (const room of rooms) {
+                const roomId = parseInt(room.replace('room:', ''));
+                const game = getGame(roomId);
+
+                if (game) {
+                    // Emit player disconnected event
+                    io.to(room).emit('game:player:disconnected', {
+                        userId,
+                        socketId: socket.id
+                    });
+
+                    console.log(`[socket] User ${userId} disconnected from active game in room ${roomId}`);
+                }
+            }
+        }
+
+        // Clean up socket mappings
+        if (userId) {
+            userToSocket.delete(userId);
+        }
+        socketToUser.delete(socket.id);
     });
 });
 
@@ -333,6 +452,12 @@ app.get('/games/:id', requireAuth, async (req, res) => {
                     user_id: userId,
                     username: username,
                     position: nextPosition,
+                });
+
+                // Also emit lobby update
+                io.emit('lobby:game:updated', {
+                    id: gameId,
+                    player_count: playerCount + 1,
                 });
             }
         }

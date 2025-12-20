@@ -11,7 +11,10 @@ export default defineConfig({
     },
     build: {
         rollupOptions: {
-            input: 'src/frontend/main.ts',
+            input: {
+                main: 'src/frontend/main.ts',
+                poker: 'src/frontend/games/poker.ts',
+            },
         },
     },
 });

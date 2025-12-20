@@ -1,28 +1,53 @@
 // Lobby client-side functionality
-import { io } from 'socket.io-client';
+// @ts-ignore - socket.io is loaded via CDN
+const io = (window as any).io;
 
-const socket = io();
+// Initialize socket with reconnection options
+const socket = io({
+  reconnection: true,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  reconnectionAttempts: 5
+});
+
+// Handle socket connection events
+socket.on('connect', () => {
+  console.log('Lobby socket connected:', socket.id);
+});
+
+socket.on('disconnect', (reason: string) => {
+  console.log('Lobby socket disconnected:', reason);
+});
+
+socket.on('connect_error', (error: Error) => {
+  console.error('Lobby socket connection error:', error);
+});
+
+socket.on('reconnect', (attemptNumber: number) => {
+  console.log('Lobby socket reconnected after', attemptNumber, 'attempts');
+  loadGames(); // Reload games after reconnection
+});
 
 // Fetch and display games
 async function loadGames() {
-    try {
-        const response = await fetch('/api/games');
-        const data = await response.json();
+  try {
+    const response = await fetch('/api/games');
+    const data = await response.json();
 
-        if (data.games && data.games.length > 0) {
-            displayGames(data.games);
-        }
-    } catch (error) {
-        console.error('Failed to load games:', error);
+    if (data.games && data.games.length > 0) {
+      displayGames(data.games);
     }
+  } catch (error) {
+    console.error('Failed to load games:', error);
+  }
 }
 
 // Display games in the UI
 function displayGames(games: any[]) {
-    const gamesContainer = document.querySelector('.space-y-3');
-    if (!gamesContainer) return;
+  const gamesContainer = document.querySelector('.space-y-3');
+  if (!gamesContainer) return;
 
-    const gamesHTML = games.map(game => `
+  const gamesHTML = games.map(game => `
     <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all duration-300">
       <div class="flex items-center justify-between">
         <div class="flex-1">
@@ -58,16 +83,22 @@ function displayGames(games: any[]) {
     </div>
   `).join('');
 
-    gamesContainer.innerHTML = gamesHTML;
+  gamesContainer.innerHTML = gamesHTML;
 }
 
 // Listen for new games
-socket.on('lobby:game:new', (game) => {
-    console.log('New game created:', game);
-    loadGames(); // Reload games list
+socket.on('lobby:game:new', (game: any) => {
+  console.log('New game created:', game);
+  loadGames(); // Reload games list
+});
+
+// Listen for game updates
+socket.on('lobby:game:updated', (game: any) => {
+  console.log('Game updated:', game);
+  loadGames(); // Reload games list
 });
 
 // Load games on page load
 document.addEventListener('DOMContentLoaded', () => {
-    loadGames();
+  loadGames();
 });

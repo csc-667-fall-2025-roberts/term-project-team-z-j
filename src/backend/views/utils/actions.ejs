@@ -22,12 +22,17 @@
         CHECK
       </button>
 
+      <!-- Call Button -->
+      <button id="callBtn" class="text-blue-600 hover:text-blue-700 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
+        CALL
+      </button>
+
       <!-- Raise Section -->
       <div class="flex items-center gap-4">
         
         <!-- Bet Amount -->
         <div class="text-gray-900 font-extrabold text-2xl tracking-wide" style="text-shadow: 1px 1px 2px rgba(255,255,255,0.7);">
-          $<span id="betAmount">50</span>
+          <span id="raiseAmount">$50</span>
         </div>
 
         <!-- Slider -->
@@ -45,6 +50,11 @@
         <!-- Raise Button -->
         <button id="raiseBtn" class="text-orange-500 hover:text-orange-600 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
           RAISE
+        </button>
+        
+        <!-- All-In Button -->
+        <button id="allinBtn" class="text-purple-600 hover:text-purple-700 font-extrabold text-2xl uppercase transition-all cursor-pointer tracking-wider hover:scale-105" style="text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9);">
+          ALL-IN
         </button>
       </div>
 
@@ -127,11 +137,11 @@
 
 <script>
   const slider = document.getElementById('betSlider');
-  const betAmountDisplay = document.getElementById('betAmount');
+  const raiseAmountDisplay = document.getElementById('raiseAmount');
   
-  if (slider && betAmountDisplay) {
+  if (slider && raiseAmountDisplay) {
     slider.addEventListener('input', (e) => {
-      betAmountDisplay.textContent = e.target.value;
+      raiseAmountDisplay.textContent = '$' + e.target.value;
     });
   }
 

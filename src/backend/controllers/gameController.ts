@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import pool from '../database';
+import { PokerGameEngine } from '../poker/PokerGameEngine';
+import { registerGame } from './pokerGameController';
 
 // Create a new game room
 export async function createGame(req: Request, res: Response) {
@@ -225,6 +227,12 @@ export async function joinGame(req: Request, res: Response) {
                 username: userResult.rows[0]?.username,
                 position: nextPosition,
             });
+
+            // Also emit lobby update
+            io.emit('lobby:game:updated', {
+                id: gameId,
+                player_count: room.player_count + 1,
+            });
         }
 
         return res.json({ success: true, position: nextPosition });
@@ -236,8 +244,9 @@ export async function joinGame(req: Request, res: Response) {
 
 // Start a game (owner only)
 export async function startGame(req: Request, res: Response) {
+    const gameId = parseInt(req.params.id);
+
     try {
-        const gameId = parseInt(req.params.id);
         const userId = req.session.user?.id;
 
         if (!userId) {
@@ -286,18 +295,76 @@ export async function startGame(req: Request, res: Response) {
             [gameId]
         );
 
-        // Broadcast game started
+        // Create game record in database (Requirement 10.1)
+        const gameResult = await pool.query(
+            `INSERT INTO game (room_id)
+            VALUES ($1)
+            RETURNING id`,
+            [gameId]
+        );
+
+        const dbGameId = gameResult.rows[0].id;
+
+        // Get players in room with their positions
+        const playersResult = await pool.query(
+            `SELECT rp.user_id, u.username, rp.position
+            FROM room_players rp
+            JOIN users u ON rp.user_id = u.id
+            WHERE rp.room_id = $1
+            ORDER BY rp.position`,
+            [gameId]
+        );
+
+        const players = playersResult.rows.map((row: any) => ({
+            userId: row.user_id,
+            username: row.username,
+            position: row.position
+        }));
+
+        // Get Socket.io instance
         const io = req.app.get('io');
-        if (io) {
-            io.to(`room:${gameId}`).emit('game:started', {
-                gameId,
-            });
+        if (!io) {
+            // Rollback status change
+            await pool.query(
+                `UPDATE game_room SET status = 'waiting' WHERE id = $1`,
+                [gameId]
+            );
+            return res.status(500).json({ error: 'Socket.io not available' });
         }
+
+        // Instantiate PokerGameEngine with room players (Requirement 7.1)
+        const pokerEngine = new PokerGameEngine(gameId, dbGameId, players, io);
+
+        // Store engine instance in memory (Map<roomId, PokerGameEngine>)
+        registerGame(gameId, pokerEngine);
+
+        // Broadcast game started - clients will register handlers on this event
+        io.to(`room:${gameId}`).emit('game:started', {
+            gameId,
+        });
+
+        // Small delay to allow clients to register handlers before starting the hand
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Call engine.startHand() to begin first hand
+        await pokerEngine.startHand();
 
         return res.json({ success: true });
     } catch (error) {
         console.error('[startGame] error:', error);
-        return res.status(500).json({ error: 'Failed to start game' });
+        const errorMessage = error instanceof Error ? error.message : 'Failed to start game';
+
+        // Rollback: Reset room status to 'waiting' if game failed to start
+        try {
+            await pool.query(
+                `UPDATE game_room SET status = 'waiting' WHERE id = $1`,
+                [gameId]
+            );
+        } catch (rollbackError) {
+            console.error('[startGame] rollback error:', rollbackError);
+        }
+
+        return res.status(500).json({ error: errorMessage, details: error });
     }
 }
 
@@ -371,6 +438,14 @@ export async function leaveGame(req: Request, res: Response) {
             io.to(`room:${gameId}`).emit('room:player:left', {
                 user_id: userId,
             });
+
+            // Also emit lobby update
+            if (remainingPlayers > 0) {
+                io.emit('lobby:game:updated', {
+                    id: gameId,
+                    player_count: remainingPlayers,
+                });
+            }
         }
 
         return res.json({ success: true });

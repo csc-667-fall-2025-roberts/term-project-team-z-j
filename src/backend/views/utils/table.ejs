@@ -7,7 +7,7 @@
     <div class="absolute inset-0 opacity-25" style="border-radius: 180px; background-image: repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 6px);"></div>
     
     <!-- Table Surface (Green Felt) -->
-    <div class="relative w-full h-full" style="border-radius: 165px; background: linear-gradient(135deg, #3d9970 0%, #2d7a57 50%, #1e5a3d 100%); box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 -5px 15px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(0, 0, 0, 0.2);">
+    <div class="relative w-full h-full" id="pokerTableSurface" style="border-radius: 165px; background: linear-gradient(135deg, #3d9970 0%, #2d7a57 50%, #1e5a3d 100%); box-shadow: inset 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 -5px 15px rgba(0, 0, 0, 0.3), 0 0 0 3px rgba(0, 0, 0, 0.2);">
       
       <!-- Felt texture overlay (noise) -->
       <div class="absolute inset-0 opacity-20" style="border-radius: 165px; background-image: url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%221.2%22 numOctaves=%225%22 /%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E'); background-size: 80px 80px;"></div>
@@ -38,9 +38,14 @@
         const sortedPlayers = [...players].sort((a, b) => a.position - b.position);
         
         // Find current user in sorted list
-        const currentUserIndex = sortedPlayers.findIndex(p => p.user_id === userId);
+        let currentUserIndex = sortedPlayers.findIndex(p => p.user_id === userId);
         
-        // Reorder so current user is first
+        // If current user not found, default to 0
+        if (currentUserIndex === -1) {
+          currentUserIndex = 0;
+        }
+        
+        // Reorder so current user is first (at bottom position)
         const reorderedPlayers = [];
         for (let i = 0; i < sortedPlayers.length; i++) {
           const index = (currentUserIndex + i) % sortedPlayers.length;
@@ -65,19 +70,29 @@
         const playerCount = reorderedPlayers.length;
         const positionIndices = visualPositionMap[playerCount] || visualPositionMap[8];
       %>
+      
+      <!-- Debug info (hidden) -->
+      <script>
+        console.log('[table.ejs] Rendered with userId:', <%= userId %>, 'players:', <%= JSON.stringify(sortedPlayers.map(p => ({ user_id: p.user_id, username: p.username }))) %>);
+      </script>
 
       <% reorderedPlayers.forEach((player, index) => { 
         const positionIndex = positionIndices[index];
         const isCurrentUser = player.user_id === userId;
       %>
         <!-- Player <%= index %> (<%= player.username %>) at visual position <%= positionIndex %> -->
-        <div data-player="<%= player.user_id %>" class="absolute <%= allPositions[positionIndex] %> flex flex-col items-center <%= isCurrentUser ? 'gap-2' : 'gap-1.5' %>">
+        <div 
+          data-player="<%= player.user_id %>" 
+          data-position="<%= player.position %>"
+          data-visual-position="<%= positionIndex %>"
+          class="absolute <%= allPositions[positionIndex] %> flex flex-col items-center <%= isCurrentUser ? 'gap-2' : 'gap-1.5' %>"
+        >
           <!-- Cards -->
-          <div class="flex <%= isCurrentUser ? 'gap-2 mb-1' : 'gap-1 mb-0.5' %>">
+          <div class="player-cards flex <%= isCurrentUser ? 'gap-2 mb-1' : 'gap-1 mb-0.5' %>">
             <% if (isCurrentUser) { %>
               <!-- Current user sees their cards (placeholder for now) -->
-              <img src="/cards/ace_of_spades.svg" alt="Card" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
-              <img src="/cards/king_of_hearts.svg" alt="Card" class="w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
+              <img src="/cards/back_card.jpg" alt="Card" class="hole-card w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
+              <img src="/cards/back_card.jpg" alt="Card" class="hole-card w-20 h-28 rounded-lg shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 8px 16px rgba(0,0,0,0.4));" />
             <% } else { %>
               <!-- Other players show card backs -->
               <img src="/cards/back_card.jpg" alt="Card Back" class="w-14 h-20 rounded-md shadow-lg" style="filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));" />
@@ -113,7 +128,7 @@
       <!-- Center Pot -->
       <div class="absolute top-[15%] left-[22%] transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5">
         <div class="text-white font-bold text-[10px] tracking-widest bg-black bg-opacity-70 px-2 py-0.5 rounded-full shadow-lg" style="letter-spacing: 0.1em;">POT</div>
-        <div id="potAmount" class="text-yellow-400 font-bold text-2xl tracking-tight" style="text-shadow: 0 2px 10px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3);">$850</div>
+        <div id="potAmount" class="text-yellow-400 font-bold text-2xl tracking-tight" style="text-shadow: 0 2px 10px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3);">$0</div>
       </div>
       
     </div>
