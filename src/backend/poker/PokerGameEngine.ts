@@ -787,7 +787,7 @@ export class PokerGameEngine {
         }
 
         // Prepare winner information for database and event
-        const winnerInfos = [];
+        const winnerInfos: any[] = [];
 
         for (const winnerId of winnerIds) {
             const winner = this.gameState.players.get(winnerId);

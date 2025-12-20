@@ -13,16 +13,7 @@ import { getMessages, sendMessage } from './controllers/messageController';
 import { getGame, registerPokerHandlers } from './controllers/pokerGameController';
 import pool, { testConnection } from './database';
 
-// Extend Express Request type to include session
-declare module 'express-session' {
-    interface SessionData {
-        user?: {
-            id: number;
-            email: string;
-            username: string;
-        };
-    }
-}
+// Session types are in types.d.ts
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
