@@ -52,7 +52,12 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, '../../public')));
 
-// Serve the main frontend entry (TypeScript) through Vite
+// In production, serve built frontend assets
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../frontend')));
+}
+
+// Serve the main frontend entry (TypeScript) through Vite (dev only)
 app.use('/main.ts', (_req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/main.ts'));
 });

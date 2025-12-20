@@ -71,8 +71,16 @@
   </div>
 </div>
 
-    <script type="module">
-      import '/main.ts';
+    <script>
+      // Button interaction
+      document.addEventListener('DOMContentLoaded', function() {
+        var signInBtn = document.getElementById('signInBtn');
+        if (signInBtn) {
+          signInBtn.addEventListener('click', function() {
+            window.location.href = '/auth/login';
+          });
+        }
+      });
     </script>
   </body>
 </html>

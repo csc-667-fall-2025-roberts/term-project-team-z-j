@@ -10,6 +10,8 @@ export default defineConfig({
         include: [],
     },
     build: {
+        outDir: '../../dist/frontend',
+        emptyDir: true,
         rollupOptions: {
             input: {
                 main: 'src/frontend/main.ts',
