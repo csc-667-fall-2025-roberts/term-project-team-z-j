@@ -205,37 +205,69 @@
   const sendChatBtn = document.getElementById('sendChatBtn');
   const chatInput = document.getElementById('chatInput');
   const chatMessages = document.getElementById('chatMessages');
+
+  // Get room ID from URL
+  const roomId = window.location.pathname.split('/').pop();
   
   // Get current time
   function getCurrentTime() {
     const now = new Date();
     return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   }
+
+  // Load messages from database 
+  async function loadMessages() {
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/messages`);
+      const data = await response.json();
+      
+      if (data.success && chatMessages) {
+        chatMessages.innerHTML = '';
+        
+        data.messages.forEach(function(msg) {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = 'flex gap-3 items-start';
+          messageDiv.innerHTML = `
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.username}" alt="${msg.username}" class="flex-shrink-0 w-10 h-10 rounded-full border-2 border-gray-300 shadow-md" />
+            <div class="flex-1">
+              <div class="flex items-baseline gap-2 mb-1">
+                <span class="font-semibold text-gray-900 text-sm">${msg.username}</span>
+                <span class="text-xs text-gray-500">${new Date(msg.created_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
+              </div>
+              <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-200">
+                <p class="text-gray-700 text-sm">${msg.content}</p>
+              </div>
+            </div>
+          `;
+          chatMessages.appendChild(messageDiv);
+        });
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+    }
+  }
   
-  function sendMessage() {
+  // send message
+  async function sendMessage() { 
     if (chatInput && chatMessages && chatInput.value.trim()) {
-      const userName = 'You';
       const messageText = chatInput.value;
-      const time = getCurrentTime();
       
-      const messageDiv = document.createElement('div');
-      messageDiv.className = 'flex gap-3 items-start';
-      messageDiv.innerHTML = `
-        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player1" alt="${userName}" class="flex-shrink-0 w-10 h-10 rounded-full border-2 border-blue-300 shadow-md" />
-        <div class="flex-1">
-          <div class="flex items-baseline gap-2 mb-1">
-            <span class="font-semibold text-gray-900 text-sm">${userName}</span>
-            <span class="text-xs text-gray-500">${time}</span>
-          </div>
-          <div class="bg-blue-100 p-3 rounded-lg rounded-tl-none shadow-sm border border-blue-200">
-            <p class="text-gray-700 text-sm">${messageText}</p>
-          </div>
-        </div>
-      `;
-      
-      chatMessages.appendChild(messageDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      chatInput.value = '';
+      try {
+        const response = await fetch(`/api/rooms/${roomId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: messageText })
+        });
+        
+        if (response.ok) {
+          chatInput.value = '';
+          loadMessages();
+        }
+      } catch (error) {
+        console.error('Failed to send message:', error);
+      }
     }
   }
   
