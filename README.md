@@ -2,6 +2,13 @@
 
 A real-time multiplayer Texas Hold'em poker game built with Node.js, Express, Socket.io, and PostgreSQL.
 
+## Team
+
+- Yuvraj Gupta
+- Kataliya Sungkame
+- Junhui Zhong
+- Daniel
+
 ## Tech Stack
 
 - **Backend:** Express 5, TypeScript, Socket.io
