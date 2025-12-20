@@ -42,6 +42,7 @@ app.use(
 
 // ---------- VIEW ENGINE ----------
 app.set('view engine', 'ejs');
+// IMPORTANT: views root is /views (pages are inside /views/pages)
 app.set('views', path.join(__dirname, 'views'));
 
 // Serve the main frontend entry (TypeScript) through Vite
@@ -92,7 +93,7 @@ app.post('/auth/login', async (req, res) => {
     const { identifier, password } = req.body;
 
     if (!identifier || !password) {
-      return res.status(400).render('login', { error: 'Missing credentials' });
+      return res.status(400).render('pages/login', { error: 'Missing credentials' });
     }
 
     const result = await pool.query(
@@ -103,21 +104,21 @@ app.post('/auth/login', async (req, res) => {
     );
 
     if (result.rowCount === 0) {
-      return res.status(401).render('login', { error: 'Invalid credentials' });
+      return res.status(401).render('pages/login', { error: 'Invalid credentials' });
     }
 
     const user = result.rows[0];
     const ok = await bcrypt.compare(password, user.password_hash);
 
     if (!ok) {
-      return res.status(401).render('login', { error: 'Invalid credentials' });
+      return res.status(401).render('pages/login', { error: 'Invalid credentials' });
     }
 
     (req.session as any).user = { id: user.id, email: user.email, username: user.username };
     return res.redirect('/lobby');
   } catch (err) {
     console.error('[auth/login] error:', err);
-    return res.status(500).render('login', { error: 'Server error' });
+    return res.status(500).render('pages/login', { error: 'Server error' });
   }
 });
 
@@ -132,25 +133,27 @@ app.post('/auth/signup', async (req, res) => {
     const { email, username, password } = req.body;
 
     if (!email || !username || !password) {
-      return res.status(400).render('signup', { error: 'Missing required fields' });
+      return res.status(400).render('pages/signup', { error: 'Missing required fields' });
     }
+
     if (String(password).length < 6) {
-      return res.status(400).render('signup', { error: 'Password must be at least 6 characters' });
+      return res.status(400).render('pages/signup', {
+        error: 'Password must be at least 6 characters',
+      });
     }
 
     // check duplicates
-    const dup = await pool.query(
-      'SELECT id FROM users WHERE email=$1 OR username=$2',
-      [email, username]
-    );
+    const dup = await pool.query('SELECT id FROM users WHERE email=$1 OR username=$2', [
+      email,
+      username,
+    ]);
 
     if (dup.rowCount > 0) {
-      return res.status(409).render('signup', { error: 'Email or username already exists' });
+      return res.status(409).render('pages/signup', { error: 'Email or username already exists' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // IMPORTANT: requires users.id to auto-increment (bigserial/identity)
     const inserted = await pool.query(
       `INSERT INTO users (email, username, password_hash)
        VALUES ($1, $2, $3)
@@ -162,7 +165,7 @@ app.post('/auth/signup', async (req, res) => {
     return res.redirect('/lobby');
   } catch (err) {
     console.error('[auth/signup] error:', err);
-    return res.status(500).render('signup', { error: 'Server error' });
+    return res.status(500).render('pages/signup', { error: 'Server error' });
   }
 });
 
@@ -181,7 +184,7 @@ app.get('/lobby', requireAuth, (req, res) => {
   });
 });
 
-// game page – base path per milestone: /games/:id
+// game page
 app.get('/games/:id', requireAuth, (req, res) => {
   const gameId = req.params.id;
   res.render('pages/game', { gameId });
@@ -193,22 +196,26 @@ app.get('/game/:id', requireAuth, (req, res) => {
   res.redirect(`/games/${gameId}`);
 });
 
-// create game – stub (later insert into game_room)
+// create game
 app.post('/games', requireAuth, (_req, res) => {
   res.redirect('/lobby');
 });
 
 // generic error page route
 app.get('/error', (_req, res) => {
-  res.status(500).render('pages/error', { message: 'An error occurred' });
+  res.status(500).render('pages/error', {
+    statusCode: 500,
+    title: 'Server Error',
+    message: 'An error occurred',
+  });
 });
 
-// 404 handler – must be last route
+// 404 handler
 app.use((_req, res) => {
   res.status(404).render('pages/error', {
     statusCode: 404,
     title: 'Page Not Found',
-    message: 'Page not found'
+    message: 'Page not found',
   });
 });
 
@@ -226,4 +233,3 @@ ViteExpress.bind(app, httpServer);
 httpServer.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-
