@@ -6,6 +6,8 @@
 import { Server } from 'socket.io';
 import { query } from '../database.js';
 import { CardManager } from './CardManager.js';
+import { HandEvaluator } from './HandEvaluator.js';
+import { PotManager } from './PotManager.js';
 import { Card, PlayerState } from './types.js';
 
 export interface GameState {
