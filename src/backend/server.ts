@@ -30,6 +30,11 @@ app.set('io', io);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Trust proxy for secure cookies behind Render's load balancer
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
 app.use(
     session({
         secret: process.env.SESSION_SECRET || 'dev-secret',
