@@ -2,6 +2,8 @@
 
 A real-time multiplayer Texas Hold'em poker game built with Node.js, Express, Socket.io, and PostgreSQL.
 
+🎮 **Live Demo:** [https://www.poker.yuvrajgupta.com](https://www.poker.yuvrajgupta.com) (Render deployment)
+
 ## Team
 
 - Yuvraj Gupta
