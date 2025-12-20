@@ -20,7 +20,7 @@
             <!-- Create Game Section -->
             <div class="bg-white rounded-xl shadow-lg p-6">
               <h2 class="text-2xl font-bold text-gray-800 mb-4">Create New Game</h2>
-              <form action="/games/create" method="POST" class="space-y-4">
+              <form action="/games" method="POST" class="space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label for="gameName" class="block text-sm font-medium text-gray-700 mb-2">
@@ -68,12 +68,12 @@
               <% if (typeof games !== 'undefined' && games.length > 0) { %>
                 <div class="space-y-3">
                   <% games.forEach(function(game) { %>
-                    <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all duration-300">
+                    <div class="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 hover:border-blue-400 transition-all duration-300" data-game-id="<%= game.id %>">
                       <div class="flex items-center justify-between">
                         <div class="flex-1">
                           <h3 class="text-lg font-semibold text-gray-800"><%= game.name %></h3>
                           <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                            <span class="flex items-center gap-1">
+                            <span class="flex items-center gap-1 player-count">
                               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
                               </svg>
@@ -85,19 +85,36 @@
                           </div>
                         </div>
                         <% if (game.state === 'waiting') { %>
-                          <button
-                            onclick="location.href='/games/<%= game.id %>'"
-                            class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
-                          >
-                            Join
-                          </button>
+                          <div class="flex gap-2">
+                            <button
+                              onclick="joinGameFromLobby(<%= game.id %>)"
+                              class="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
+                            >
+                              Join
+                            </button>
+                            <button
+                              onclick="location.href='/games/<%= game.id %>'"
+                              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition-all duration-300"
+                            >
+                              View
+                            </button>
+                          </div>
                         <% } else { %>
-                          <button
-                            onclick="location.href='/games/<%= game.id %>'"
-                            class="bg-gray-400 hover:bg-gray-500 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
-                          >
-                            Spectate
-                          </button>
+                          <div class="flex gap-2">
+                            <button
+                              onclick="location.href='/games/<%= game.id %>'"
+                              class="bg-gray-400 hover:bg-gray-500 text-white font-semibold px-6 py-2 rounded-full transition-all duration-300"
+                            >
+                              Spectate
+                            </button>
+                            <button
+                              onclick="resetGame(<%= game.id %>)"
+                              class="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-full transition-all duration-300 text-sm"
+                              title="Reset this game to waiting status"
+                            >
+                              Reset
+                            </button>
+                          </div>
                         <% } %>
                       </div>
                     </div>
@@ -157,6 +174,92 @@
           </div>
         </div>
     <!--<%- include('../utils/footer') %> -->
+
+    <script>
+      async function joinGameFromLobby(gameId) {
+        try {
+          const response = await fetch(`/api/games/${gameId}/join`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+          });
+
+          const result = await response.json();
+          
+          // Check if not logged in
+          if (response.status === 401) {
+            alert('You must be logged in to join a game. Redirecting to login...');
+            window.location.href = '/auth/login';
+            return;
+          }
+          
+          if (result.success) {
+            // Redirect to game room
+            window.location.href = `/games/${gameId}`;
+          } else {
+            alert(`Failed to join: ${result.error || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error('Error joining game:', error);
+          alert('Error joining game. Please try again.');
+        }
+      }
+
+      async function resetGame(gameId) {
+        if (!confirm('Reset this game to waiting status? This will clear all players and game state.')) {
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/games/${gameId}/reset`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            alert('Game reset successfully!');
+            location.reload();
+          } else {
+            alert(`Failed to reset: ${result.error || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error('Error resetting game:', error);
+          alert('Error resetting game. Please try again.');
+        }
+      }
+
+      // Auto-refresh player counts every 2 seconds
+      async function updatePlayerCounts() {
+        const gameCards = document.querySelectorAll('[data-game-id]');
+        for (const card of gameCards) {
+          const gameId = card.getAttribute('data-game-id');
+          try {
+            const response = await fetch(`/api/games/${gameId}/players`);
+            if (response.ok) {
+              const data = await response.json();
+              const playerCountSpan = card.querySelector('.player-count');
+              if (playerCountSpan) {
+                // Update just the text, keep the SVG
+                const textNodes = Array.from(playerCountSpan.childNodes).filter(node => node.nodeType === Node.TEXT_NODE);
+                if (textNodes.length > 0) {
+                  textNodes[textNodes.length - 1].textContent = ` ${data.players.length}/${data.maxPlayers} Players`;
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching player count for game ' + gameId + ':', error);
+          }
+        }
+      }
+
+      // Update counts every 2 seconds
+      setInterval(updatePlayerCounts, 2000);
+    </script>
 
     <script type="module">
       import '/main.ts';

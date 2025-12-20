@@ -54,8 +54,8 @@ export class PokerGame {
             currentBet: 0,
             currentPlayerIndex: 0,
             dealerIndex: 0,
-            smallBlindIndex: 1,
-            bigBlindIndex: 2,
+            smallBlindIndex: playerNames.length >= 2 ? 1 : 0,
+            bigBlindIndex: playerNames.length >= 3 ? 2 : (playerNames.length >= 2 ? 1 : 0),
             phase: 'preflop',
             deck: [],
             winners: [],
@@ -347,7 +347,6 @@ export class PokerGame {
     private evaluateHand(cards: Card[]): { strength: number; kickers: number[] } {
         // This is a simplified hand evaluation
         // In a real implementation, you'd want a more sophisticated algorithm
-        const sortedCards = cards.sort((a, b) => b.value - a.value);
 
         // Check for flush
         const suits = cards.reduce((acc, card) => {

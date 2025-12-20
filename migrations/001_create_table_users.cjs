@@ -13,7 +13,7 @@ exports.up = (pgm) => {
   pgm.createTable('users', {
     // id: bigint [pk, increment]
     id: {
-      type: 'bigint',
+      type: 'bigserial',
       primaryKey: true,
       notNull: true,
     },

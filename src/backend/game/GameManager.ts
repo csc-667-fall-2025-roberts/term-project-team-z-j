@@ -29,6 +29,11 @@ export class GameManager {
 
             const room = roomResult.rows[0];
 
+            // Check if we have enough players
+            if (playerNames.length < 2) {
+                return false;
+            }
+
             // Create new poker game
             const pokerGame = new PokerGame(roomId.toString(), playerNames);
 
@@ -99,15 +104,8 @@ export class GameManager {
 
             gameRoom.players.push(playerName);
 
-            // Start game if we have enough players (minimum 2)
-            if (gameRoom.players.length >= 2 && !gameRoom.game) {
-                gameRoom.game = new PokerGame(roomId.toString(), gameRoom.players);
-                gameRoom.status = 'in_progress';
-
-                // Update database
-                await query('UPDATE game_room SET status = $1 WHERE id = $2', ['in_progress', roomId]);
-                await query('INSERT INTO game (room_id) VALUES ($1)', [roomId]);
-            }
+            // Don't auto-start - wait for manual start
+            // Players can join and then click "Start Game" when ready
 
             return true;
         } catch (error) {
@@ -228,6 +226,11 @@ export class GameManager {
             console.error('Error starting new hand:', error);
             return false;
         }
+    }
+
+    getPlayerCount(roomId: number): number {
+        const gameRoom = this.games.get(roomId);
+        return gameRoom?.players.length || 0;
     }
 }
 

@@ -21,72 +21,13 @@
       <!-- Inner rim shadow for depth -->
       <div class="absolute inset-0" style="border-radius: 230px; box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.4);"></div>
 
-      <!-- Player 1 (Bottom - Current Player with visible cards) -->
-      <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-24 flex flex-col items-center gap-3">
-        <!-- Cards -->
-        <div class="flex gap-3 mb-1">
-          <img src="/cards/ace_of_spades.svg" alt="Ace of Spades" class="w-24 h-32 rounded-xl shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));" />
-          <img src="/cards/king_of_hearts.svg" alt="King of Hearts" class="w-24 h-32 rounded-xl shadow-2xl transform hover:scale-105 transition-transform" style="filter: drop-shadow(0 10px 20px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-5 py-2.5 flex items-center gap-3 shadow-xl" style="border: 3px solid #fbbf24; box-shadow: 0 8px 20px rgba(0,0,0,0.5), 0 0 20px rgba(251, 191, 36, 0.3);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player1" alt="Player 1" class="w-11 h-11 rounded-full border-3 border-white shadow-lg" />
-          <div class="text-left">
-            <div class="text-white font-bold text-sm tracking-wide">You</div>
-            <div class="text-green-400 font-bold text-base">$1,500</div>
-          </div>
-        </div>
-      </div>
+      <!-- Player seats will be dynamically rendered here -->
+      <div id="playerSeats"></div>
 
-      <!-- Player 2 (Left) -->
-      <div class="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-20 flex flex-col items-center gap-2">
-        <!-- Cards (face down) -->
-        <div class="flex gap-1.5 mb-1">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 2px solid #4b5563; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player2" alt="Player 2" class="w-9 h-9 rounded-full border-2 border-white shadow-md" />
-          <div class="text-left">
-            <div class="text-white font-bold text-xs tracking-wide">varan307</div>
-            <div class="text-green-400 font-bold text-sm">$2,100</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Player 3 (Top) -->
-      <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-20 flex flex-col items-center gap-2">
-        <!-- Cards (face down) -->
-        <div class="flex gap-1.5 mb-1">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 2px solid #4b5563; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player3" alt="Player 3" class="w-9 h-9 rounded-full border-2 border-white shadow-md" />
-          <div class="text-left">
-            <div class="text-white font-bold text-xs tracking-wide">PokerPro88</div>
-            <div class="text-green-400 font-bold text-sm">$3,250</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Player 4 (Right) -->
-      <div class="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-20 flex flex-col items-center gap-2">
-        <!-- Cards (face down) -->
-        <div class="flex gap-1.5 mb-1">
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-          <img src="/cards/back_card.jpg" alt="Card Back" class="w-16 h-24 rounded-lg shadow-xl" style="filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4));" />
-        </div>
-        <!-- Player Info -->
-        <div class="bg-gradient-to-r from-gray-900 to-black rounded-full px-4 py-2 flex items-center gap-2.5 shadow-xl" style="border: 2px solid #4b5563; box-shadow: 0 6px 16px rgba(0,0,0,0.5);">
-          <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=player4" alt="Player 4" class="w-9 h-9 rounded-full border-2 border-white shadow-md" />
-          <div class="text-left">
-            <div class="text-white font-bold text-xs tracking-wide">AllInAnnie</div>
-            <div class="text-green-400 font-bold text-sm">$1,875</div>
-          </div>
-        </div>
+      <!-- Waiting for game to start message -->
+      <div id="waitingMessage" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+        <div class="text-white text-2xl font-bold mb-4">Waiting for game to start...</div>
+        <div class="text-white text-lg opacity-75">Players will appear here once the game begins</div>
       </div>
 
       <!-- Community Cards -->
@@ -95,9 +36,9 @@
       </div>
 
       <!-- Center Pot -->
-      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5">
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5" id="potDisplay" style="display: none;">
         <div class="text-white font-bold text-xs tracking-widest bg-black bg-opacity-70 px-4 py-1.5 rounded-full shadow-lg" style="letter-spacing: 0.1em;">POT</div>
-        <div class="text-yellow-400 font-bold text-4xl tracking-tight" style="text-shadow: 0 2px 10px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3);">$850</div>
+        <div class="text-yellow-400 font-bold text-4xl tracking-tight" style="text-shadow: 0 2px 10px rgba(251, 191, 36, 0.5), 0 0 20px rgba(251, 191, 36, 0.3);">$0</div>
       </div>
       
     </div>
