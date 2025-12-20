@@ -211,6 +211,19 @@
 
   // Get room ID from URL
   const roomId = window.location.pathname.split('/').pop();
+
+  // Socket.IO for real-time messages
+  const socket = io();
+
+  socket.on('connect', () => {
+    socket.emit('room:join', { roomId: roomId });
+  });
+
+  socket.on('room:message:new', (messageData) => {
+    if (messageData.room_id == roomId) {
+      loadMessages(); // Just reload all messages
+    }
+  });
   
   // Get current time
   function getCurrentTime() {
